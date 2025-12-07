@@ -1,0 +1,46 @@
+[
+  {
+    "sensor_id": "2025-11-17_23-44-27-SFM3300AW_24410080.edf",
+    "audio_id": "record_20251117T154541Z.wav",
+    "sensor_file": "C:\\Users\\WangShuai\\Desktop\\MMDataset\\251118\\2025-11-17_23-44-27-SFM3300AW_24410080.edf",
+    "wav_path": "C:\\Users\\WangShuai\\Desktop\\MMDataset\\251118\\record_20251117T154541Z.wav",
+    "sensor_start": 1763394267.943974,
+    "sensor_end": 1763397260.786078,
+    "audio_start": 1763394341.114938,
+    "audio_end": 1763394940.979201,
+    "overlap_sec": 599.8642630577087
+  },
+  {
+    "sensor_id": "2025-11-17_23-44-27-SFM3300AW_24410080.edf",
+    "audio_id": "record_20251117T155659Z.wav",
+    "sensor_file": "C:\\Users\\WangShuai\\Desktop\\MMDataset\\251118\\2025-11-17_23-44-27-SFM3300AW_24410080.edf",
+    "wav_path": "C:\\Users\\WangShuai\\Desktop\\MMDataset\\251118\\record_20251117T155659Z.wav",
+    "sensor_start": 1763394267.943974,
+    "sensor_end": 1763397260.786078,
+    "audio_start": 1763395019.737944,
+    "audio_end": 1763395619.602207,
+    "overlap_sec": 599.8642630577087
+  },
+  {
+    "sensor_id": "2025-11-17_23-44-27-SFM3300AW_24410080.edf",
+    "audio_id": "record_20251117T161158Z.wav",
+    "sensor_file": "C:\\Users\\WangShuai\\Desktop\\MMDataset\\251118\\2025-11-17_23-44-27-SFM3300AW_24410080.edf",
+    "wav_path": "C:\\Users\\WangShuai\\Desktop\\MMDataset\\251118\\record_20251117T161158Z.wav",
+    "sensor_start": 1763394267.943974,
+    "sensor_end": 1763397260.786078,
+    "audio_start": 1763395918.516665,
+    "audio_end": 1763396518.380928,
+    "overlap_sec": 599.8642630577087
+  },
+  {
+    "sensor_id": "2025-11-18_00-36-39-SFM3300AW_24400737.edf",
+    "audio_id": "record_20251117T163755Z.wav",
+    "sensor_file": "C:\\Users\\WangShuai\\Desktop\\MMDataset\\251118\\2025-11-18_00-36-39-SFM3300AW_24400737.edf",
+    "wav_path": "C:\\Users\\WangShuai\\Desktop\\MMDataset\\251118\\record_20251117T163755Z.wav",
+    "sensor_start": 1763397399.412633,
+    "sensor_end": 1763398166.737706,
+    "audio_start": 1763397475.484491,
+    "audio_end": 1763398075.3487542,
+    "overlap_sec": 599.8642630577087
+  }
+]
