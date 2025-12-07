@@ -1,11 +1,15 @@
+import atexit
 import os
 import random
+from datetime import datetime
+from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
 
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from torch.nn.utils.rnn import pack_padded_sequence
 
 import torchaudio
@@ -27,6 +31,7 @@ def collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
       - "P": [T] 或 [T, n_P] 或 None
       - "Q": [T] 或 [T, n_Q] 或 None
       - "label_id": scalar tensor
+      - "path": 样本路径（字符串）
     这里我们只用 P 和 Q（温度先不管）。
     """
 
@@ -44,6 +49,7 @@ def collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
     # ========= sensor: P/Q 做 padding =========
     sensor_seqs = []
     lengths = []
+    paths = []
 
     for b in batch:
         P = b["P"]  # [T] or [T, n] or None
@@ -69,8 +75,17 @@ def collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
             Q_main = Q_2d[:, 0:1]  # [T,1]
             sensor = torch.cat([P_main, Q_main], dim=-1)  # [T,2]
 
+        # Normalize each sensor channel to zero mean/unit variance per sample
+        channel_mean = sensor.mean(dim=0, keepdim=True)
+        channel_std = sensor.std(dim=0, keepdim=True)
+        channel_std = torch.where(
+            channel_std < 1e-6, torch.ones_like(channel_std), channel_std
+        )
+        sensor = (sensor - channel_mean) / channel_std
+
         sensor_seqs.append(sensor)
         lengths.append(sensor.shape[0])
+        paths.append(b["path"])
 
     max_len = max(lengths)
     sensor_padded = torch.zeros(B, max_len, 2, dtype=torch.float32)  # [B, T_max, 2]
@@ -87,6 +102,7 @@ def collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
         "sensor": sensor_padded,      # [B, T_sensor_max, 2]
         "sensor_lengths": lengths_tensor,
         "label": labels,
+        "paths": paths,
     }
 
 # ===========================
@@ -160,9 +176,8 @@ class AudioResNetEncoder(nn.Module):
         )
         self.db = torchaudio.transforms.AmplitudeToDB()
 
-        # resnet18 backbone（这里用了 ImageNet 预训练，如果你不想下权重可以改成 weights=None）
-        # self.backbone = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
-        self.backbone = models.resnet18(weights=None)
+        # resnet18 backbone（加载 ImageNet 预训练以提升收敛速度）
+        self.backbone = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
         # 把输入改成单通道
         self.backbone.conv1 = nn.Conv2d(
             1, 64, kernel_size=7, stride=2, padding=3, bias=False
@@ -336,12 +351,25 @@ def eval_modal_contribution(
     model: nn.Module,
     loader: DataLoader,
     device: torch.device,
-) -> Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]:
+    num_classes: int,
+    id2label: Dict[int, str],
+) -> Tuple[
+    Tuple[float, float],
+    Tuple[float, float],
+    Tuple[float, float],
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    List[Dict[str, str]],
+]:
     """
     返回：
       - (full_loss, full_acc): audio+sensor
       - (audio_loss, audio_acc): 只用 audio（sensor 置零）
       - (sensor_loss, sensor_acc): 只用 sensor（audio 置零）
+      - confusion: [C, C] full 模式混淆矩阵（行真值，列预测）
+      - precision: [C] full 模式逐类 precision
+      - recall: [C] full 模式逐类 recall
     """
     model.eval()
     ce = nn.CrossEntropyLoss()
@@ -352,11 +380,16 @@ def eval_modal_contribution(
         "sensor_only": {"loss": 0.0, "correct": 0, "total": 0},
     }
 
+    full_preds_all = []
+    full_labels_all = []
+    misclassified_samples: List[Dict[str, str]] = []
+
     for batch in loader:
         audio = batch["audio"].to(device)
         sensor = batch["sensor"].to(device)
         lengths = batch["sensor_lengths"].to(device)
         labels = batch["label"].to(device)
+        paths = batch["paths"]
         bs = labels.size(0)
 
         # 1) full
@@ -365,8 +398,22 @@ def eval_modal_contribution(
         loss_full = ce(logits_full, labels)
         preds_full = logits_full.argmax(dim=-1)
         stats["full"]["loss"] += loss_full.item() * bs
-        stats["full"]["correct"] += (preds_full == labels).sum().item()
+        correct_mask = (preds_full == labels)
+        stats["full"]["correct"] += correct_mask.sum().item()
         stats["full"]["total"] += bs
+        full_preds_all.append(preds_full.detach().cpu())
+        full_labels_all.append(labels.detach().cpu())
+        for idx_in_batch in range(bs):
+            if not correct_mask[idx_in_batch]:
+                true_id = labels[idx_in_batch].item()
+                pred_id = preds_full[idx_in_batch].item()
+                misclassified_samples.append(
+                    {
+                        "path": paths[idx_in_batch],
+                        "true_label": id2label.get(true_id, str(true_id)),
+                        "pred_label": id2label.get(pred_id, str(pred_id)),
+                    }
+                )
 
         # 2) audio only
         logits_a = model(audio, sensor, lengths,
@@ -395,7 +442,28 @@ def eval_modal_contribution(
     a_loss, a_acc = _summ("audio_only")
     s_loss, s_acc = _summ("sensor_only")
 
-    return (full_loss, full_acc), (a_loss, a_acc), (s_loss, s_acc)
+    if full_preds_all:
+        preds_cat = torch.cat(full_preds_all)
+        labels_cat = torch.cat(full_labels_all)
+        confusion = torch.zeros(num_classes, num_classes, dtype=torch.long)
+        for t, p in zip(labels_cat, preds_cat):
+            confusion[t.item(), p.item()] += 1
+        precision = confusion.diag().float() / confusion.sum(0).clamp(min=1).float()
+        recall = confusion.diag().float() / confusion.sum(1).clamp(min=1).float()
+    else:
+        confusion = torch.zeros(num_classes, num_classes, dtype=torch.long)
+        precision = torch.zeros(num_classes, dtype=torch.float32)
+        recall = torch.zeros(num_classes, dtype=torch.float32)
+
+    return (
+        (full_loss, full_acc),
+        (a_loss, a_acc),
+        (s_loss, s_acc),
+        confusion,
+        precision,
+        recall,
+        misclassified_samples,
+    )
 
 
 # ===========================
@@ -403,6 +471,19 @@ def eval_modal_contribution(
 # ===========================
 
 def main():
+    log_dir = Path("log")
+    log_dir.mkdir(exist_ok=True)
+    log_path = log_dir / f"{Path(__file__).stem}.log"
+    log_file = log_path.open("w", encoding="utf-8")
+    atexit.register(log_file.close)
+
+    def log(msg: str) -> None:
+        print(msg)
+        log_file.write(msg + "\n")
+        log_file.flush()
+
+    log("=" * 80)
+    log(f"Run started at {datetime.now().isoformat(timespec='seconds')}")
     # 1) 找所有 segment .npz
     # 你可以改成更具体的目录，比如 "data/processed/segments_10s"
     all_paths = sorted(find_segment_paths("./data"))
@@ -419,7 +500,7 @@ def main():
     # 按“录制单位”分组切分，避免同一录音/传感器的多个 10s 片段落入不同划分造成泄漏
     train_paths, val_paths = split_paths_by_group(all_paths, train_ratio=0.6, seed=seed)
     n = len(all_paths)
-    print(
+    log(
         f"Total segments: {n}, train={len(train_paths)}, val={len(val_paths)}, "
         f"groups={len(set(_group_key_from_path(p) for p in all_paths))}"
     )
@@ -431,14 +512,15 @@ def main():
         raw_to_norm={
             "no secretion": "no_secretion",
             "no secretion sound": "no_secretion",
+            "no secretion sound (with hemf)": "no_secretion",
             "3ml secretion": "secretion",
             "3ml secretion m4": "secretion",
             "5ml secretion m4": "secretion",
-            "3ml secretion (no hemf)": "drop",  # 示例：直接丢弃 no HEMF 样本
+            "3ml secretion (with hemf)": "secretion",  # 示例：直接丢弃 no HEMF 样本
         },
         fail_on_unknown=True,
     )
-    print(label_processor.describe())
+    log(label_processor.describe())
 
     # 2) 构建 Dataset
     train_ds = ReadSegments(
@@ -456,15 +538,31 @@ def main():
     )
 
     num_classes = len(train_ds.label2id)
-    print("num_classes =", num_classes, "label2id =", train_ds.label2id)
+    log("num_classes = {} label2id = {}".format(num_classes, train_ds.label2id))
+
+    # Compute class-balanced sampling weights
+    train_label_ids = torch.tensor(train_ds.get_label_id_list(), dtype=torch.long)
+    class_counts = torch.bincount(train_label_ids, minlength=num_classes).float()
+    class_weights = 1.0 / class_counts.clamp(min=1.0)
+    sample_weights = class_weights[train_label_ids]
+    train_sampler = WeightedRandomSampler(
+        weights=sample_weights,
+        num_samples=len(sample_weights),
+        replacement=True,
+    )
+    log(
+        "Class counts: {} | sampler weights: {}".format(
+            class_counts.tolist(), class_weights.tolist()
+        )
+    )
 
     # 3) DataLoader
     # Use single-worker DataLoaders for strict determinism; multi-worker + shared RNG
     # can introduce subtle nondeterminism even with seeding.
     train_loader = DataLoader(
         train_ds,
-        batch_size=8,
-        shuffle=True,
+        batch_size=32,
+        sampler=train_sampler,
         num_workers=0,
         collate_fn=collate_fn,
         worker_init_fn=seed_worker,
@@ -472,7 +570,7 @@ def main():
     )
     val_loader = DataLoader(
         val_ds,
-        batch_size=8,
+        batch_size=32,
         shuffle=False,
         num_workers=0,
         collate_fn=collate_fn,
@@ -496,30 +594,62 @@ def main():
 
     # Disable foreach/fused variants to avoid GPU atomic nondeterminism on some PyTorch builds
     optimizer = torch.optim.Adam(
-        model.parameters(), lr=1e-4, weight_decay=1e-4, foreach=False
+        model.parameters(), lr=3e-4, weight_decay=1e-4, foreach=False
+    )
+    scheduler = ReduceLROnPlateau(
+        optimizer, mode="max", factor=0.5, patience=3, min_lr=1e-5
     )
 
     os.makedirs("checkpoints", exist_ok=True)
 
     # 5) 训练若干 epoch + 模态贡献对比
-    num_epochs = 10
+    num_epochs = 40
+    min_epochs = 30
+    early_stop_patience = 5
     best_val_full_acc = 0.0
+    epochs_since_best = 0
+    full_acc_history: List[float] = []
+    audio_acc_history: List[float] = []
+    sensor_acc_history: List[float] = []
+    best_misclassified_samples: List[Dict[str, str]] = []
 
     for epoch in range(1, num_epochs + 1):
         train_loss = train_one_epoch(model, train_loader, optimizer, device)
 
-        (full_loss, full_acc), (a_loss, a_acc), (s_loss, s_acc) = eval_modal_contribution(
-            model, val_loader, device
+        (
+            (full_loss, full_acc),
+            (a_loss, a_acc),
+            (s_loss, s_acc),
+            confusion,
+            precision,
+            recall,
+            misclassified_samples,
+        ) = eval_modal_contribution(
+            model, val_loader, device, num_classes, train_ds.id2label
         )
+        full_acc_history.append(full_acc)
+        audio_acc_history.append(a_acc)
+        sensor_acc_history.append(s_acc)
 
-        print(
-            f"Epoch {epoch:02d}: "
+        current_lr = optimizer.param_groups[0]["lr"]
+        log(
+            f"Epoch {epoch:02d}: lr={current_lr:.2e} | "
             f"train_loss={train_loss:.4f} | "
             f"full: loss={full_loss:.4f}, acc={full_acc:.4f} | "
             f"audio_only: loss={a_loss:.4f}, acc={a_acc:.4f} | "
             f"sensor_only: loss={s_loss:.4f}, acc={s_acc:.4f}"
         )
+        label_names = [train_ds.id2label[i] for i in range(num_classes)]
+        log("  Confusion matrix (rows=true, cols=pred):")
+        log(str(confusion))
+        log("  Per-class precision/recall:")
+        for i, name in enumerate(label_names):
+            log(
+                f"    {name}: precision={precision[i].item():.3f}, "
+                f"recall={recall[i].item():.3f}"
+            )
 
+        improved = False
         # 用 full 模式的 acc 作为 best 标准
         if full_acc > best_val_full_acc:
             best_val_full_acc = full_acc
@@ -531,7 +661,49 @@ def main():
                 },
                 ckpt_path,
             )
-            print(f"  -> New best full_acc={full_acc:.4f}! Saved to {ckpt_path}")
+            log(f"  -> New best full_acc={full_acc:.4f}! Saved to {ckpt_path}")
+            epochs_since_best = 0
+            improved = True
+            best_misclassified_samples = list(misclassified_samples)
+        else:
+            epochs_since_best += 1
+
+        scheduler.step(full_acc)
+
+        if (not improved) and epoch >= min_epochs and epochs_since_best >= early_stop_patience:
+            log(
+                f"Early stopping triggered at epoch {epoch}: "
+                f"no full-accuracy improvement for {early_stop_patience} epochs."
+            )
+            break
+
+    if full_acc_history:
+        log("Run summary:")
+        log(
+            "  Full acc mean={:.4f}, best={:.4f}".format(
+                float(np.mean(full_acc_history)), float(np.max(full_acc_history))
+            )
+        )
+        log(
+            "  Audio-only acc mean={:.4f}, best={:.4f}".format(
+                float(np.mean(audio_acc_history)), float(np.max(audio_acc_history))
+            )
+        )
+        log(
+            "  Sensor-only acc mean={:.4f}, best={:.4f}".format(
+                float(np.mean(sensor_acc_history)), float(np.max(sensor_acc_history))
+            )
+        )
+    if best_misclassified_samples:
+        log("Misclassified samples from best epoch:")
+        for item in best_misclassified_samples:
+            log(
+                f"  path={item['path']} | true={item['true_label']} | pred={item['pred_label']}"
+            )
+    else:
+        log("Misclassified samples from best epoch: none (perfect accuracy).")
+
+    log_file.close()
 
 
 if __name__ == "__main__":

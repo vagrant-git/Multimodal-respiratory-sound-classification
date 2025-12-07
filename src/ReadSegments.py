@@ -299,3 +299,18 @@ class ReadSegments(Dataset):
             "path": path,
         }
         return sample
+
+    def get_label_id_list(self) -> List[int]:
+        """
+        Return a list of label ids aligned with self.paths.
+        """
+        label_ids: List[int] = []
+        for path in self.paths:
+            d = np.load(path, allow_pickle=True)
+            raw_label = d["label"]
+            if isinstance(raw_label, np.ndarray) and raw_label.shape == ():
+                raw_label = raw_label.item()
+            raw_label = str(raw_label)
+            norm_label = self.label_normalizer(raw_label)
+            label_ids.append(self.label2id[norm_label])
+        return label_ids

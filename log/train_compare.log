@@ -1,0 +1,361 @@
+================================================================================
+Run started at 2025-12-07T23:50:01
+Total segments: 890, train=534, val=356, groups=15
+Label mapping (canonical -> class_token):
+  '3ml secretion' -> 'secretion'
+  '3ml secretion (with hemf)' -> 'secretion'
+  '3ml secretion m4' -> 'secretion'
+  '5ml secretion m4' -> 'secretion'
+  'no secretion' -> 'no_secretion'
+  'no secretion sound' -> 'no_secretion'
+  'no secretion sound (with hemf)' -> 'no_secretion'
+num_classes = 2 label2id = {'no_secretion': 0, 'secretion': 1}
+Class counts: [178.0, 356.0] | sampler weights: [0.00561797758564353, 0.002808988792821765]
+Epoch 01: lr=3.00e-04 | train_loss=0.1231 | full: loss=3.7084, acc=0.6601 | audio_only: loss=3.6825, acc=0.6601 | sensor_only: loss=0.6940, acc=0.4354
+  Confusion matrix (rows=true, cols=pred):
+tensor([[117, 121],
+        [  0, 118]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.492
+    secretion: precision=0.494, recall=1.000
+  -> New best full_acc=0.6601! Saved to checkpoints/best_multimodal.pt
+Epoch 02: lr=3.00e-04 | train_loss=0.0009 | full: loss=3.3730, acc=0.6685 | audio_only: loss=3.3332, acc=0.6685 | sensor_only: loss=0.6926, acc=0.5927
+  Confusion matrix (rows=true, cols=pred):
+tensor([[120, 118],
+        [  0, 118]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.504
+    secretion: precision=0.500, recall=1.000
+  -> New best full_acc=0.6685! Saved to checkpoints/best_multimodal.pt
+Epoch 03: lr=3.00e-04 | train_loss=0.0001 | full: loss=3.8549, acc=0.6685 | audio_only: loss=3.8129, acc=0.6685 | sensor_only: loss=0.6924, acc=0.6517
+  Confusion matrix (rows=true, cols=pred):
+tensor([[120, 118],
+        [  0, 118]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.504
+    secretion: precision=0.500, recall=1.000
+Epoch 04: lr=3.00e-04 | train_loss=0.0010 | full: loss=1.6883, acc=0.6629 | audio_only: loss=1.6712, acc=0.6629 | sensor_only: loss=0.6936, acc=0.5618
+  Confusion matrix (rows=true, cols=pred):
+tensor([[121, 117],
+        [  3, 115]])
+  Per-class precision/recall:
+    no_secretion: precision=0.976, recall=0.508
+    secretion: precision=0.496, recall=0.975
+Epoch 05: lr=3.00e-04 | train_loss=0.0758 | full: loss=2.5205, acc=0.6545 | audio_only: loss=2.4948, acc=0.6545 | sensor_only: loss=0.6961, acc=0.2921
+  Confusion matrix (rows=true, cols=pred):
+tensor([[181,  57],
+        [ 66,  52]])
+  Per-class precision/recall:
+    no_secretion: precision=0.733, recall=0.761
+    secretion: precision=0.477, recall=0.441
+Epoch 06: lr=3.00e-04 | train_loss=0.0237 | full: loss=2.4972, acc=0.6685 | audio_only: loss=2.4740, acc=0.6685 | sensor_only: loss=0.7046, acc=0.3371
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 07: lr=1.50e-04 | train_loss=0.0179 | full: loss=1.4944, acc=0.6601 | audio_only: loss=1.4739, acc=0.6573 | sensor_only: loss=0.7026, acc=0.3343
+  Confusion matrix (rows=true, cols=pred):
+tensor([[122, 116],
+        [  5, 113]])
+  Per-class precision/recall:
+    no_secretion: precision=0.961, recall=0.513
+    secretion: precision=0.493, recall=0.958
+Epoch 08: lr=1.50e-04 | train_loss=0.0171 | full: loss=1.3821, acc=0.6489 | audio_only: loss=1.3714, acc=0.6461 | sensor_only: loss=0.6963, acc=0.4888
+  Confusion matrix (rows=true, cols=pred):
+tensor([[158,  80],
+        [ 45,  73]])
+  Per-class precision/recall:
+    no_secretion: precision=0.778, recall=0.664
+    secretion: precision=0.477, recall=0.619
+Epoch 09: lr=1.50e-04 | train_loss=0.0032 | full: loss=1.4309, acc=0.6685 | audio_only: loss=1.4193, acc=0.6685 | sensor_only: loss=0.6947, acc=0.4691
+  Confusion matrix (rows=true, cols=pred):
+tensor([[170,  68],
+        [ 50,  68]])
+  Per-class precision/recall:
+    no_secretion: precision=0.773, recall=0.714
+    secretion: precision=0.500, recall=0.576
+Epoch 10: lr=1.50e-04 | train_loss=0.0011 | full: loss=1.5582, acc=0.6685 | audio_only: loss=1.5397, acc=0.6685 | sensor_only: loss=0.6942, acc=0.4551
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 11: lr=7.50e-05 | train_loss=0.0022 | full: loss=1.7505, acc=0.6685 | audio_only: loss=1.7275, acc=0.6685 | sensor_only: loss=0.6936, acc=0.4494
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 12: lr=7.50e-05 | train_loss=0.0084 | full: loss=1.4992, acc=0.6685 | audio_only: loss=1.4772, acc=0.6685 | sensor_only: loss=0.6949, acc=0.4803
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 13: lr=7.50e-05 | train_loss=0.0016 | full: loss=1.9295, acc=0.6685 | audio_only: loss=1.9036, acc=0.6685 | sensor_only: loss=0.6952, acc=0.4860
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 14: lr=7.50e-05 | train_loss=0.0016 | full: loss=1.7317, acc=0.6685 | audio_only: loss=1.7068, acc=0.6685 | sensor_only: loss=0.6949, acc=0.4860
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 15: lr=3.75e-05 | train_loss=0.0010 | full: loss=1.4191, acc=0.6657 | audio_only: loss=1.4049, acc=0.6685 | sensor_only: loss=0.6946, acc=0.4831
+  Confusion matrix (rows=true, cols=pred):
+tensor([[167,  71],
+        [ 48,  70]])
+  Per-class precision/recall:
+    no_secretion: precision=0.777, recall=0.702
+    secretion: precision=0.496, recall=0.593
+Epoch 16: lr=3.75e-05 | train_loss=0.0008 | full: loss=1.5585, acc=0.6685 | audio_only: loss=1.5387, acc=0.6685 | sensor_only: loss=0.6944, acc=0.4831
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 17: lr=3.75e-05 | train_loss=0.0013 | full: loss=1.8165, acc=0.6685 | audio_only: loss=1.7900, acc=0.6685 | sensor_only: loss=0.6943, acc=0.4831
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 18: lr=3.75e-05 | train_loss=0.0006 | full: loss=1.7282, acc=0.6685 | audio_only: loss=1.7064, acc=0.6685 | sensor_only: loss=0.6942, acc=0.4803
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 19: lr=1.87e-05 | train_loss=0.0019 | full: loss=1.6008, acc=0.6742 | audio_only: loss=1.5817, acc=0.6742 | sensor_only: loss=0.6939, acc=0.4803
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 57,  61]])
+  Per-class precision/recall:
+    no_secretion: precision=0.758, recall=0.752
+    secretion: precision=0.508, recall=0.517
+  -> New best full_acc=0.6742! Saved to checkpoints/best_multimodal.pt
+Epoch 20: lr=1.87e-05 | train_loss=0.0004 | full: loss=1.6612, acc=0.6685 | audio_only: loss=1.6409, acc=0.6713 | sensor_only: loss=0.6937, acc=0.4803
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 21: lr=1.87e-05 | train_loss=0.0006 | full: loss=1.5848, acc=0.6685 | audio_only: loss=1.5633, acc=0.6685 | sensor_only: loss=0.6937, acc=0.4803
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 22: lr=1.87e-05 | train_loss=0.0008 | full: loss=1.5049, acc=0.6713 | audio_only: loss=1.4860, acc=0.6713 | sensor_only: loss=0.6936, acc=0.4803
+  Confusion matrix (rows=true, cols=pred):
+tensor([[178,  60],
+        [ 57,  61]])
+  Per-class precision/recall:
+    no_secretion: precision=0.757, recall=0.748
+    secretion: precision=0.504, recall=0.517
+Epoch 23: lr=1.87e-05 | train_loss=0.0711 | full: loss=1.9523, acc=0.6685 | audio_only: loss=1.9251, acc=0.6685 | sensor_only: loss=0.6937, acc=0.4803
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 24: lr=1.00e-05 | train_loss=0.0002 | full: loss=1.5029, acc=0.6713 | audio_only: loss=1.4889, acc=0.6685 | sensor_only: loss=0.6941, acc=0.4888
+  Confusion matrix (rows=true, cols=pred):
+tensor([[168,  70],
+        [ 47,  71]])
+  Per-class precision/recall:
+    no_secretion: precision=0.781, recall=0.706
+    secretion: precision=0.504, recall=0.602
+Epoch 25: lr=1.00e-05 | train_loss=0.0005 | full: loss=1.4388, acc=0.6629 | audio_only: loss=1.4272, acc=0.6601 | sensor_only: loss=0.6941, acc=0.4888
+  Confusion matrix (rows=true, cols=pred):
+tensor([[132, 106],
+        [ 14, 104]])
+  Per-class precision/recall:
+    no_secretion: precision=0.904, recall=0.555
+    secretion: precision=0.495, recall=0.881
+Epoch 26: lr=1.00e-05 | train_loss=0.0005 | full: loss=1.5138, acc=0.6573 | audio_only: loss=1.5023, acc=0.6573 | sensor_only: loss=0.6941, acc=0.4888
+  Confusion matrix (rows=true, cols=pred):
+tensor([[128, 110],
+        [ 12, 106]])
+  Per-class precision/recall:
+    no_secretion: precision=0.914, recall=0.538
+    secretion: precision=0.491, recall=0.898
+Epoch 27: lr=1.00e-05 | train_loss=0.0002 | full: loss=1.4477, acc=0.6798 | audio_only: loss=1.4359, acc=0.6826 | sensor_only: loss=0.6941, acc=0.4888
+  Confusion matrix (rows=true, cols=pred):
+tensor([[139,  99],
+        [ 15, 103]])
+  Per-class precision/recall:
+    no_secretion: precision=0.903, recall=0.584
+    secretion: precision=0.510, recall=0.873
+  -> New best full_acc=0.6798! Saved to checkpoints/best_multimodal.pt
+Epoch 28: lr=1.00e-05 | train_loss=0.1049 | full: loss=1.6358, acc=0.6685 | audio_only: loss=1.6131, acc=0.6685 | sensor_only: loss=0.6944, acc=0.4831
+  Confusion matrix (rows=true, cols=pred):
+tensor([[179,  59],
+        [ 59,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.752, recall=0.752
+    secretion: precision=0.500, recall=0.500
+Epoch 29: lr=1.00e-05 | train_loss=0.0009 | full: loss=1.4416, acc=0.6713 | audio_only: loss=1.4295, acc=0.6713 | sensor_only: loss=0.6951, acc=0.4888
+  Confusion matrix (rows=true, cols=pred):
+tensor([[125, 113],
+        [  4, 114]])
+  Per-class precision/recall:
+    no_secretion: precision=0.969, recall=0.525
+    secretion: precision=0.502, recall=0.966
+Epoch 30: lr=1.00e-05 | train_loss=0.0006 | full: loss=1.4660, acc=0.6629 | audio_only: loss=1.4517, acc=0.6629 | sensor_only: loss=0.6952, acc=0.4888
+  Confusion matrix (rows=true, cols=pred):
+tensor([[121, 117],
+        [  3, 115]])
+  Per-class precision/recall:
+    no_secretion: precision=0.976, recall=0.508
+    secretion: precision=0.496, recall=0.975
+Epoch 31: lr=1.00e-05 | train_loss=0.0005 | full: loss=1.5014, acc=0.6685 | audio_only: loss=1.4866, acc=0.6685 | sensor_only: loss=0.6952, acc=0.4888
+  Confusion matrix (rows=true, cols=pred):
+tensor([[121, 117],
+        [  1, 117]])
+  Per-class precision/recall:
+    no_secretion: precision=0.992, recall=0.508
+    secretion: precision=0.500, recall=0.992
+Epoch 32: lr=1.00e-05 | train_loss=0.0005 | full: loss=1.3158, acc=0.6629 | audio_only: loss=1.3041, acc=0.6657 | sensor_only: loss=0.6951, acc=0.4888
+  Confusion matrix (rows=true, cols=pred):
+tensor([[125, 113],
+        [  7, 111]])
+  Per-class precision/recall:
+    no_secretion: precision=0.947, recall=0.525
+    secretion: precision=0.496, recall=0.941
+Early stopping triggered at epoch 32: no full-accuracy improvement for 5 epochs.
+Run summary:
+  Full acc mean=0.6666, best=0.6798
+  Audio-only acc mean=0.6666, best=0.6826
+  Sensor-only acc mean=0.4764, best=0.6517
+Misclassified samples from best epoch:
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00005.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00006.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00007.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00012.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00013.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00014.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00015.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00016.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00017.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00018.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00020.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00021.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00022.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00023.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00026.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00030.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00031.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00032.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00033.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00034.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00035.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00036.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00037.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00038.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00039.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00040.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00041.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00042.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00043.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00044.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00045.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00046.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00047.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00048.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00050.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00053.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00054.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00056.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00057.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T140059Z.wav/record_20251107T140059Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00058.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00000.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00001.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00003.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00004.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00005.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00006.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00007.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00037.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00041.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00047.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00048.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00049.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00052.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00055.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251107/2025-11-07_21-55-04-SFM3300AW_24410080.edf__record_20251107T141600Z.wav/record_20251107T141600Z.wav__2025-11-07_21-55-04-SFM3300AW_24410080.edf_win00057.npz | true=secretion | pred=no_secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00000.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00001.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00002.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00003.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00004.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00005.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00006.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00007.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00008.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00009.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00010.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00011.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00012.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00013.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00014.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00015.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00016.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00017.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00018.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00019.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00020.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00021.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00022.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00023.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00024.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00025.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00026.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00027.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00028.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00029.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00030.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00031.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00032.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00033.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00034.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00035.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00036.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00037.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00038.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00039.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00040.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00041.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00042.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00043.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00044.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00045.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00046.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00047.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00048.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00049.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00050.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00051.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00052.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00053.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00054.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00055.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00056.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00057.npz | true=no_secretion | pred=secretion
+  path=./data/MMDataset_segments/251130/2025-11-30_23-21-23-SFM3300AW_24400737.edf__record_20251130T152317Z.wav/record_20251130T152317Z.wav__2025-11-30_23-21-23-SFM3300AW_24400737.edf_win00058.npz | true=no_secretion | pred=secretion
