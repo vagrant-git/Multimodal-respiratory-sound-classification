@@ -333,7 +333,7 @@ def main():
 
     print(f"Total segments: {n}, train={len(train_paths)}, val={len(val_paths)}")
 
-    target_sr = 16000
+    target_sr = 22050
 
     # Label 配置：raw 文本 -> 类别 token（字符串）。未匹配将直接报错（fail fast）。
     label_processor = LabelProcessor(

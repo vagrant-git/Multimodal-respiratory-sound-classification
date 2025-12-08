@@ -505,7 +505,7 @@ def main():
         f"groups={len(set(_group_key_from_path(p) for p in all_paths))}"
     )
 
-    target_sr = 16000  # 统一重采样到 16kHz（要和 ReadSegments 里的一致）
+    target_sr = 22050  # 统一重采样到 22.05kHz（要和 ReadSegments 里的一致）
 
     # Label 配置：raw 文本 -> 类别 token（字符串）。未匹配将直接报错（fail fast）。
     label_processor = LabelProcessor(
@@ -516,7 +516,7 @@ def main():
             "3ml secretion": "secretion",
             "3ml secretion m4": "secretion",
             "5ml secretion m4": "secretion",
-            "3ml secretion (with hemf)": "secretion",  # 示例：直接丢弃 no HEMF 样本
+            "3ml secretion (with hemf)": "secretion",  
         },
         fail_on_unknown=True,
     )
