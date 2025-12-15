@@ -14,7 +14,7 @@ import torchaudio
 import torchvision.models as models
 
 from src.ReadSegments import ReadSegments, find_segment_paths
-from util.label_processor import LabelProcessor
+from util.label_processor import LabelProcessor, DropLabel
 from util.seed import set_seed, seed_worker
 
 
@@ -118,24 +118,82 @@ def _group_key_from_path(path: str) -> str:
         return base.split("_win")[0]
     return os.path.splitext(base)[0]
 
-def split_paths_by_group(paths: List[str], train_ratio: float = 0.6, seed: int = 42) -> Tuple[List[str], List[str]]:
+def _infer_group_label(group_paths: List[str], label_normalizer) -> str:
+    """
+    Infer and validate that a group of segment paths all share the same label.
+    Raises if mixed labels are found.
+    """
+    norm_label = None
+    for p in group_paths:
+        d = np.load(p, allow_pickle=True)
+        if "label" not in d:
+            raise KeyError(f"Missing 'label' field in {p}")
+        lab = d["label"]
+        if isinstance(lab, np.ndarray) and lab.shape == ():
+            lab = lab.item()
+        current = label_normalizer(str(lab))
+        if norm_label is None:
+            norm_label = current
+        elif norm_label != current:
+            raise ValueError(f"Mixed labels inside group {p}: '{norm_label}' vs '{current}'")
+    if norm_label is None:
+        raise ValueError("Group contained no labels; cannot infer class")
+    return norm_label
+
+
+def split_paths_by_group(
+    paths: List[str],
+    train_ratio: float = 0.6,
+    seed: int = 42,
+    label_normalizer=None,
+) -> Tuple[List[str], List[str]]:
+    """
+    Group segments by recording unit (filename without _win suffix) then split into
+    train/val groups. If label_normalizer is provided, perform a stratified split
+    at the group level to keep class balance while still preventing leakage.
+    """
     groups: Dict[str, List[str]] = {}
     for p in paths:
         key = _group_key_from_path(p)
         groups.setdefault(key, []).append(p)
 
-    # 1. 用稳定顺序（比如按 key 排序），再洗牌
-    keys = sorted(groups.keys())
     rng = random.Random(seed)
-    rng.shuffle(keys)
 
-    n_train = int(train_ratio * len(keys))
-    if len(keys) > 1:
-        n_train = min(max(n_train, 1), len(keys) - 1)
+    if label_normalizer is not None:
+        # Stratified split by group label to avoid dumping most negatives into val
+        label_to_keys: Dict[str, List[str]] = {}
+        for k, ps in groups.items():
+            try:
+                norm_label = _infer_group_label(ps, label_normalizer)
+            except DropLabel:
+                # Skip groups whose labels are configured to be dropped
+                continue
+            label_to_keys.setdefault(norm_label, []).append(k)
 
-    # 2. 不要用 set，当 list 用，保证顺序可控
-    train_keys = keys[:n_train]
-    val_keys   = keys[n_train:]
+        train_keys: List[str] = []
+        val_keys: List[str] = []
+        for _, keys in sorted(label_to_keys.items()):
+            keys_sorted = sorted(keys)
+            rng.shuffle(keys_sorted)
+            n_train = int(train_ratio * len(keys_sorted))
+            if len(keys_sorted) > 1:
+                n_train = min(max(n_train, 1), len(keys_sorted) - 1)
+            train_keys.extend(keys_sorted[:n_train])
+            val_keys.extend(keys_sorted[n_train:])
+        rng.shuffle(train_keys)
+        rng.shuffle(val_keys)
+    else:
+        # 1. 用稳定顺序（比如按 key 排序），再洗牌
+        keys = sorted(groups.keys())
+        rng.shuffle(keys)
+
+        n_train = int(train_ratio * len(keys))
+        if len(keys) > 1:
+            n_train = min(max(n_train, 1), len(keys) - 1)
+
+        # 2. 不要用 set，当 list 用，保证顺序可控
+        train_keys = keys[:n_train]
+        val_keys   = keys[n_train:]
 
     # 3. 也可以顺带把组内的 path 排序一下，进一步稳定
     train_paths = [p for k in train_keys for p in sorted(groups[k])]
@@ -487,30 +545,36 @@ def main():
     # Deterministic DataLoader shuffling
     dl_generator = torch.Generator().manual_seed(seed)
 
-    # 按“录制单位”分组切分，避免同一录音/传感器的多个 10s 片段落入不同划分造成泄漏
-    train_paths, val_paths = split_paths_by_group(all_paths, train_ratio=0.6, seed=seed)
-    n = len(all_paths)
-    log(
-        f"Total segments: {n}, train={len(train_paths)}, val={len(val_paths)}, "
-        f"groups={len(set(_group_key_from_path(p) for p in all_paths))}"
-    )
-
     target_sr = 22050  # 统一重采样到 22.05kHz（要和 ReadSegments 里的一致）
 
     # Label 配置：raw 文本 -> 类别 token（字符串）。未匹配将直接报错（fail fast）。
+    negative_token = "no_secretion"
     label_processor = LabelProcessor(
         raw_to_norm={
-            "no secretion": "no_secretion",
-            "no secretion sound": "no_secretion",
-            "no secretion sound (with hemf)": "no_secretion",
+            "no secretion": negative_token,
+            "no secretion sound": negative_token,
+            "no secretion sound (with hemf)": negative_token,
+            
             "3ml secretion": "secretion",
             "3ml secretion m4": "secretion",
             "5ml secretion m4": "secretion",
+            "5ml secretion": "secretion",
             "3ml secretion (with hemf)": "secretion",  
         },
         fail_on_unknown=True,
     )
     log(label_processor.describe())
+
+    # 按“录制单位”分组切分，避免同一录音/传感器的多个 10s 片段落入不同划分造成泄漏。
+    # 同时按 label 分层，防止几乎所有负样本被分到验证集。
+    train_paths, val_paths = split_paths_by_group(
+        all_paths, train_ratio=0.6, seed=seed, label_normalizer=label_processor
+    )
+    n = len(all_paths)
+    log(
+        f"Total segments: {n}, train={len(train_paths)}, val={len(val_paths)}, "
+        f"groups={len(set(_group_key_from_path(p) for p in all_paths))}"
+    )
 
     # 2) 构建 Dataset
     train_ds = ReadSegments(

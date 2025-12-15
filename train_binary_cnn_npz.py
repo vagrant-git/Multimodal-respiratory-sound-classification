@@ -2,7 +2,7 @@ import argparse
 import glob
 import random
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 import numpy as np
 import torch
@@ -12,6 +12,7 @@ from torch.nn.utils.rnn import pad_sequence
 
 
 # Label normalization mapping
+DROP_TOKEN = "drop"
 LABEL_MAP: Dict[str, str] = {
     "no secretion": "no_secretion",
     "no secretion sound": "no_secretion",
@@ -19,8 +20,13 @@ LABEL_MAP: Dict[str, str] = {
     "3ml secretion": "secretion",
     "3ml secretion m4": "secretion",
     "5ml secretion m4": "secretion",
-    "3ml secretion (with hemf)": "secretion",
+    "5ml secretion": "secretion",
+    "3ml secretion (with hemf)": DROP_TOKEN,
 }
+
+
+class DropLabel(Exception):
+    """Raised when a sample is configured to be dropped."""
 
 
 def set_seed(seed: int = 42) -> None:
@@ -28,13 +34,30 @@ def set_seed(seed: int = 42) -> None:
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+    # Enforce deterministic CuDNN behavior
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+def seed_worker(worker_id: int) -> None:
+    """
+    Make DataLoader workers deterministic.
+    """
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 
 def normalize_label(raw: str) -> str:
     key = str(raw).strip().lower()
     if key in LABEL_MAP:
-        return LABEL_MAP[key]
+        norm = LABEL_MAP[key]
+        if norm == DROP_TOKEN:
+            raise DropLabel(key)
+        return norm
     if key in LABEL_MAP.values():
+        if key == DROP_TOKEN:
+            raise DropLabel(key)
         return key
     raise ValueError(f"Unknown label: {raw}")
 
@@ -52,7 +75,7 @@ def pick_column(cols: List[str], hint: str) -> str:
 class NpzSegmentDataset(Dataset):
     def __init__(self, paths: List[Path]) -> None:
         self.paths = paths
-        self.classes = sorted(set(LABEL_MAP.values()))
+        self.classes = sorted(set(v for v in LABEL_MAP.values() if v != DROP_TOKEN))
         self.label2id = {c: i for i, c in enumerate(self.classes)}
 
     def __len__(self) -> int:
@@ -127,6 +150,30 @@ def find_npz_files(root: Path) -> List[Path]:
     return files
 
 
+def filter_drop_labels(paths: List[Path]) -> Tuple[List[Path], int]:
+    """
+    Remove any .npz whose normalized label maps to DROP_TOKEN.
+    Returns (kept_paths, dropped_count).
+    """
+    kept: List[Path] = []
+    dropped = 0
+    for p in paths:
+        data = np.load(p, allow_pickle=True)
+        raw_label: Optional[str] = data.get("label")
+        if raw_label is None:
+            dropped += 1
+            continue
+        if isinstance(raw_label, np.ndarray) and raw_label.shape == ():
+            raw_label = raw_label.item()
+        try:
+            _ = normalize_label(str(raw_label))
+        except DropLabel:
+            dropped += 1
+            continue
+        kept.append(p)
+    return kept, dropped
+
+
 def split_dataset(paths: List[Path], train_ratio: float = 0.8, seed: int = 42) -> Tuple[List[Path], List[Path]]:
     rng = random.Random(seed)
     shuffled = paths.copy()
@@ -178,12 +225,19 @@ def main() -> None:
     args = parser.parse_args()
 
     set_seed(args.seed)
+    dl_generator = torch.Generator().manual_seed(args.seed)
 
     all_paths = find_npz_files(args.data_dir)
     if not all_paths:
         raise RuntimeError(f"No .npz files found under {args.data_dir}")
 
-    train_paths, val_paths = split_dataset(all_paths, train_ratio=args.train_ratio, seed=args.seed)
+    filtered_paths, dropped = filter_drop_labels(all_paths)
+    if dropped:
+        print(f"Dropped {dropped} segments due to label rules (e.g., '{DROP_TOKEN}').")
+    if not filtered_paths:
+        raise RuntimeError("All .npz samples were dropped by label filtering.")
+
+    train_paths, val_paths = split_dataset(filtered_paths, train_ratio=args.train_ratio, seed=args.seed)
     print(f"Found {len(all_paths)} segments -> train {len(train_paths)} | val {len(val_paths)}")
 
     train_ds = NpzSegmentDataset(train_paths)
@@ -191,8 +245,22 @@ def main() -> None:
     if train_ds.label2id != val_ds.label2id:
         val_ds.label2id = train_ds.label2id  # align mapping
 
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, collate_fn=collate_batch)
-    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_batch)
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=args.batch_size,
+        shuffle=True,
+        collate_fn=collate_batch,
+        worker_init_fn=seed_worker,
+        generator=dl_generator,
+    )
+    val_loader = DataLoader(
+        val_ds,
+        batch_size=args.batch_size,
+        shuffle=False,
+        collate_fn=collate_batch,
+        worker_init_fn=seed_worker,
+        generator=dl_generator,
+    )
 
     device = torch.device(args.device)
     model = Simple1DCNN(num_classes=len(train_ds.label2id)).to(device)

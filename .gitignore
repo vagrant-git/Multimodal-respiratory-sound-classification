@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
-log/
+*.log
 .vscode/
 data/MMDataset_segments/
 checkpoints/
