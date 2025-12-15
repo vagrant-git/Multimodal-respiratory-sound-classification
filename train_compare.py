@@ -10,8 +10,6 @@ import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader, WeightedRandomSampler
-from torch.nn.utils.rnn import pack_padded_sequence
-
 import torchaudio
 import torchvision.models as models
 
@@ -202,49 +200,43 @@ class AudioResNetEncoder(nn.Module):
         return feat
 
 
-class SensorGRUEncoder(nn.Module):
+class SensorCNNEncoder(nn.Module):
     """
-    P/Q 序列 -> GRU -> sensor feature
+    P/Q 序列 -> 1D CNN -> sensor feature
     """
     def __init__(
         self,
         input_dim: int = 2,   # P 和 Q 两个通道
-        hidden_dim: int = 128,
-        num_layers: int = 1,
-        bidirectional: bool = True,
         out_dim: int = 128,
     ):
         super().__init__()
-        self.gru = nn.GRU(
-            input_dim,
-            hidden_dim,
-            num_layers=num_layers,
-            batch_first=True,
-            bidirectional=bidirectional,
+        self.feature_extractor = nn.Sequential(
+            nn.Conv1d(input_dim, 64, kernel_size=5, padding=2),
+            nn.BatchNorm1d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool1d(2),
+            nn.Conv1d(64, 128, kernel_size=5, padding=2),
+            nn.BatchNorm1d(128),
+            nn.ReLU(inplace=True),
+            nn.MaxPool1d(2),
+            nn.Conv1d(128, 256, kernel_size=3, padding=1),
+            nn.BatchNorm1d(256),
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool1d(1),
         )
-        self.bidirectional = bidirectional
-        self.hidden_dim = hidden_dim
-        self.proj = nn.Linear(hidden_dim * (2 if bidirectional else 1), out_dim)
+        self.proj = nn.Linear(256, out_dim)
 
     def forward(self, x: torch.Tensor, lengths: torch.Tensor) -> torch.Tensor:
         """
         x: [B, T, 2]
-        lengths: [B] 真实长度
+        lengths: [B] 真实长度（CNN 使用零填充，lengths 仅保留接口兼容）
         返回: [B, out_dim]
         """
-        packed = pack_padded_sequence(
-            x, lengths.cpu(), batch_first=True, enforce_sorted=False
-        )
-        _, h_n = self.gru(packed)  # h_n: [num_layers * num_directions, B, H]
-
-        if self.bidirectional:
-            h_forward = h_n[-2, :, :]  # [B, H]
-            h_backward = h_n[-1, :, :] # [B, H]
-            h = torch.cat([h_forward, h_backward], dim=-1)  # [B, 2H]
-        else:
-            h = h_n[-1, :, :]  # [B, H]
-
-        out = self.proj(h)  # [B, out_dim]
+        _ = lengths
+        # Conv1d 期望 [B, C, T]
+        x = x.transpose(1, 2)  # [B, 2, T]
+        feats = self.feature_extractor(x).squeeze(-1)  # [B, 256]
+        out = self.proj(feats)  # [B, out_dim]
         return out
 
 
@@ -270,10 +262,8 @@ class MultiModalLateFusionNet(nn.Module):
             f_min=f_min,
             f_max=f_max,
         )
-        self.sensor_encoder = SensorGRUEncoder(
+        self.sensor_encoder = SensorCNNEncoder(
             input_dim=2,
-            hidden_dim=128,
-            bidirectional=True,
             out_dim=sensor_feat_dim,
         )
         self.fusion = nn.Sequential(
