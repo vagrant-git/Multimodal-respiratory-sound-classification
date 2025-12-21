@@ -175,8 +175,13 @@ def split_paths_by_group(
         for _, keys in sorted(label_to_keys.items()):
             keys_sorted = sorted(keys)
             rng.shuffle(keys_sorted)
-            n_train = int(train_ratio * len(keys_sorted))
-            if len(keys_sorted) > 1:
+            if len(keys_sorted) == 1:
+                # Keep the only group in train to avoid class disappearing from training
+                n_train = 1
+            else:
+                # Use round instead of floor; otherwise small class counts (e.g., 7–8 groups)
+                # end up sending ~half the data to train when train_ratio=0.6.
+                n_train = int(round(train_ratio * len(keys_sorted)))
                 n_train = min(max(n_train, 1), len(keys_sorted) - 1)
             train_keys.extend(keys_sorted[:n_train])
             val_keys.extend(keys_sorted[n_train:])
@@ -231,6 +236,11 @@ class AudioResNetEncoder(nn.Module):
             f_max=max_freq,
         )
         self.db = torchaudio.transforms.AmplitudeToDB()
+        # Mild SpecAugment to combat overfit; only applied in train() mode
+        self.spec_aug = nn.Sequential(
+            torchaudio.transforms.FrequencyMasking(freq_mask_param=8),
+            torchaudio.transforms.TimeMasking(time_mask_param=16),
+        )
 
         # resnet18 backbone（加载 ImageNet 预训练以提升收敛速度）
         self.backbone = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
@@ -253,6 +263,8 @@ class AudioResNetEncoder(nn.Module):
         mel = self.melspec(x)   # [B, n_mels, T_frames]
         mel_db = self.db(mel)   # [B, n_mels, T_frames]
         mel_db = mel_db.unsqueeze(1)  # [B, 1, n_mels, T_frames]
+        if self.training:
+            mel_db = self.spec_aug(mel_db)
 
         feat = self.backbone(mel_db)  # [B, out_dim]
         return feat
@@ -277,6 +289,7 @@ class SensorCNNEncoder(nn.Module):
             nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
             nn.MaxPool1d(2),
+            nn.Dropout(p=0.2),
             nn.Conv1d(128, 256, kernel_size=3, padding=1),
             nn.BatchNorm1d(256),
             nn.ReLU(inplace=True),
@@ -327,7 +340,7 @@ class MultiModalLateFusionNet(nn.Module):
         self.fusion = nn.Sequential(
             nn.Linear(audio_feat_dim + sensor_feat_dim, 256),
             nn.ReLU(),
-            nn.Dropout(0.3),
+            nn.Dropout(0.5),
             nn.Linear(256, num_classes),
         )
 
@@ -374,6 +387,7 @@ def train_one_epoch(
     ce = nn.CrossEntropyLoss()
     total_loss = 0.0
     total_samples = 0
+    sensor_noise_std = 0.01  # light jitter for P/Q channels
 
     for batch in loader:
         audio = batch["audio"].to(device)               # [B, T_audio]
@@ -381,10 +395,14 @@ def train_one_epoch(
         lengths = batch["sensor_lengths"].to(device)    # [B]
         labels = batch["label"].to(device)              # [B]
 
+        if sensor_noise_std > 0:
+            sensor = sensor + torch.randn_like(sensor) * sensor_noise_std
+
         optimizer.zero_grad()
         logits = model(audio, sensor, lengths, drop_audio=False, drop_sensor=False)
         loss = ce(logits, labels)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
 
         bs = labels.size(0)
@@ -546,14 +564,14 @@ def main():
     dl_generator = torch.Generator().manual_seed(seed)
 
     target_sr = 22050  # 统一重采样到 22.05kHz（要和 ReadSegments 里的一致）
+    target_sensor_rate_hz = 100.0  # 平齐传感器采样率，缓解不同设备/设置的频率差异
 
     # Label 配置：raw 文本 -> 类别 token（字符串）。未匹配将直接报错（fail fast）。
-    negative_token = "no_secretion"
     label_processor = LabelProcessor(
         raw_to_norm={
-            "no secretion": negative_token,
-            "no secretion sound": negative_token,
-            "no secretion sound (with hemf)": negative_token,
+            "no secretion":  "no_secretion",
+            "no secretion sound":  "no_secretion",
+            "no secretion sound (with hemf)":  "no_secretion",
             
             "3ml secretion": "secretion",
             "3ml secretion m4": "secretion",
@@ -580,12 +598,14 @@ def main():
     train_ds = ReadSegments(
         train_paths,
         target_sample_rate=target_sr,
+        target_sensor_rate=target_sensor_rate_hz,
         label_normalizer=label_processor,
     )
     # 验证集复用训练集的 label2id，防止类别排序/缺失造成指标错位
     val_ds   = ReadSegments(
         val_paths,
         target_sample_rate=target_sr,
+        target_sensor_rate=target_sensor_rate_hz,
         label_normalizer=label_processor,
         label2id=train_ds.label2id,
         label_map_paths=train_paths,
@@ -646,9 +666,16 @@ def main():
         f_max=4000
     ).to(device)
 
+    # Freeze the audio backbone for a short warmup to stabilize early training
+    freeze_audio_backbone_epochs = 2
+    for p in model.audio_encoder.backbone.parameters():
+        p.requires_grad = False
+    for p in model.audio_encoder.backbone.fc.parameters():
+        p.requires_grad = True
+
     # Disable foreach/fused variants to avoid GPU atomic nondeterminism on some PyTorch builds
     optimizer = torch.optim.Adam(
-        model.parameters(), lr=3e-4, weight_decay=1e-4, foreach=False
+        model.parameters(), lr=1e-4, weight_decay=1e-3, foreach=False
     )
     scheduler = ReduceLROnPlateau(
         optimizer, mode="max", factor=0.5, patience=3, min_lr=1e-5
@@ -657,8 +684,8 @@ def main():
     os.makedirs("checkpoints", exist_ok=True)
 
     # 5) 训练若干 epoch + 模态贡献对比
-    num_epochs = 40
-    min_epochs = 30
+    num_epochs = int(os.environ.get("NUM_EPOCHS", 25))
+    min_epochs = min(num_epochs, 15)
     early_stop_patience = 5
     best_val_full_acc = 0.0
     epochs_since_best = 0
@@ -668,6 +695,12 @@ def main():
     best_misclassified_samples: List[Dict[str, str]] = []
 
     for epoch in range(1, num_epochs + 1):
+        if epoch == freeze_audio_backbone_epochs + 1:
+            # Unfreeze after warmup
+            for p in model.audio_encoder.backbone.parameters():
+                p.requires_grad = True
+            log(f"Unfroze audio backbone at epoch {epoch}.")
+
         train_loss = train_one_epoch(model, train_loader, optimizer, device)
 
         (

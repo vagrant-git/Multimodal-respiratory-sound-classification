@@ -77,6 +77,7 @@ class ReadSegments(Dataset):
         paths: Sequence[str],
         label_normalizer: Optional[Callable[[str], str]] = None,
         target_sample_rate: Optional[int] = None,
+        target_sensor_rate: Optional[float] = None,
         label2id: Optional[Dict[str, int]] = None,
         label_map_paths: Optional[Sequence[str]] = None,
     ):
@@ -88,12 +89,14 @@ class ReadSegments(Dataset):
         target_sample_rate: 如果不为 None，会把每个 audio 从它自己的 sr 重采样到这个 sr。
         label2id: 可选，直接重用已经构建的 label->id 映射，例如使用训练集的映射，避免验证集重建造成缺失
         label_map_paths: 可选，指定用来构建 label 映射的 paths，默认使用自身 self.paths
+        target_sensor_rate: 如果不为 None，会基于 sensor_time_epoch 将 sensor_values 重采样到该采样率
         """
         raw_paths = list(paths)
         if len(raw_paths) == 0:
             raise ValueError("ReadSegments: no .npz files found!")
 
         self.target_sample_rate = target_sample_rate
+        self.target_sensor_rate = target_sensor_rate
 
         if label_normalizer is None:
             self.label_processor = DEFAULT_LABEL_PROCESSOR
@@ -225,6 +228,9 @@ class ReadSegments(Dataset):
 
         # ===== 1) audio + 重采样 =====
         audio = d["audio"].astype(np.float32)  # [T_audio]
+        # Scale int16/PCM-like waveforms to roughly [-1, 1] to stabilize Mel/resnet
+        max_abs = max(np.abs(audio).max(), 1e-6)
+        audio = audio / max_abs
         # 从 npz 里拿原始采样率；如果没有这个字段就默认 48000
         sr = int(d.get("audio_rate_hz", 48000))
 
@@ -241,6 +247,30 @@ class ReadSegments(Dataset):
         sensor_all = d["sensor_values"].astype(np.float32)  # [T_sensor, C]
         sensor_cols = d["sensor_cols"]                      # array of str
         col_names = [str(c) for c in sensor_cols]
+
+        # 可选：基于时间戳对传感器序列做重采样以平齐不同设备频率
+        if self.target_sensor_rate is not None:
+            if "sensor_time_epoch" not in d:
+                raise KeyError("sensor_time_epoch missing; cannot resample sensors")
+            t = d["sensor_time_epoch"].astype(np.float64)  # [T_sensor]
+            if t.shape[0] < 2:
+                raise ValueError(f"sensor_time_epoch too short for resampling; path={path}")
+            # 对齐到相对时间，避免浮点绝对值过大
+            t0 = t[0]
+            t = t - t0
+            duration = t[-1] - t[0]
+            # 防止时间戳异常
+            if duration <= 0:
+                raise ValueError(f"Non-positive duration in sensor_time_epoch; path={path}")
+            n_target = int(round(duration * self.target_sensor_rate)) + 1
+            n_target = max(n_target, 2)
+            t_target = np.linspace(0.0, duration, num=n_target, dtype=np.float64)
+
+            # 逐通道线性插值
+            resampled = []
+            for c in range(sensor_all.shape[1]):
+                resampled.append(np.interp(t_target, t, sensor_all[:, c]))
+            sensor_all = np.stack(resampled, axis=1).astype(np.float32)
 
         # 根据列名拆出 P / Q / T
         p_idx = [i for i, name in enumerate(col_names) if "P_" in name]
