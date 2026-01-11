@@ -258,44 +258,110 @@ class AudioResNetEncoder(nn.Module):
         return feat
 
 
-class SensorCNNEncoder(nn.Module):
-    """
-    P/Q 序列 -> 1D CNN -> sensor feature
-    """
+class InceptionBlock1D(nn.Module):
     def __init__(
         self,
-        input_dim: int = 2,   # P 和 Q 两个通道
-        out_dim: int = 128,
+        in_channels: int,
+        n_filters: int,
+        kernel_sizes: Tuple[int, int, int],
+        bottleneck_channels: int,
     ):
         super().__init__()
-        self.feature_extractor = nn.Sequential(
-            nn.Conv1d(input_dim, 64, kernel_size=5, padding=2),
-            nn.BatchNorm1d(64),
-            nn.ReLU(inplace=True),
-            nn.MaxPool1d(2),
-            nn.Conv1d(64, 128, kernel_size=5, padding=2),
-            nn.BatchNorm1d(128),
-            nn.ReLU(inplace=True),
-            nn.MaxPool1d(2),
-            nn.Conv1d(128, 256, kernel_size=3, padding=1),
-            nn.BatchNorm1d(256),
-            nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool1d(1),
+        use_bottleneck = bottleneck_channels > 0 and in_channels > 1
+        self.bottleneck = (
+            nn.Conv1d(in_channels, bottleneck_channels, kernel_size=1, bias=False)
+            if use_bottleneck
+            else None
         )
-        self.proj = nn.Linear(256, out_dim)
+        conv_in = bottleneck_channels if use_bottleneck else in_channels
+        self.convs = nn.ModuleList(
+            [
+                nn.Conv1d(
+                    conv_in,
+                    n_filters,
+                    kernel_size=k,
+                    padding=k // 2,
+                    bias=False,
+                )
+                for k in kernel_sizes
+            ]
+        )
+        self.maxpool = nn.MaxPool1d(kernel_size=3, stride=1, padding=1)
+        self.pool_conv = nn.Conv1d(in_channels, n_filters, kernel_size=1, bias=False)
+        self.bn = nn.BatchNorm1d(n_filters * (len(kernel_sizes) + 1))
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_in = x
+        if self.bottleneck is not None:
+            x = self.bottleneck(x)
+        outs = [conv(x) for conv in self.convs]
+        outs.append(self.pool_conv(self.maxpool(x_in)))
+        x = torch.cat(outs, dim=1)
+        x = self.bn(x)
+        return self.relu(x)
+
+
+class InceptionTimeEncoder(nn.Module):
+    """
+    P/Q 序列 -> InceptionTime -> sensor feature
+    """
+
+    def __init__(
+        self,
+        input_dim: int = 2,
+        out_dim: int = 128,
+        n_filters: int = 32,
+        kernel_sizes: Tuple[int, int, int] = (9, 19, 39),
+        bottleneck_channels: int = 32,
+        n_blocks: int = 6,
+        use_residual: bool = True,
+    ):
+        super().__init__()
+        self.use_residual = use_residual
+        self.blocks = nn.ModuleList()
+        self.residuals = nn.ModuleDict()
+
+        in_channels = input_dim
+        res_in_channels = input_dim
+        for i in range(n_blocks):
+            block = InceptionBlock1D(
+                in_channels=in_channels,
+                n_filters=n_filters,
+                kernel_sizes=kernel_sizes,
+                bottleneck_channels=bottleneck_channels,
+            )
+            self.blocks.append(block)
+            out_channels = n_filters * (len(kernel_sizes) + 1)
+            if self.use_residual and (i + 1) % 3 == 0:
+                self.residuals[str(i)] = nn.Sequential(
+                    nn.Conv1d(res_in_channels, out_channels, kernel_size=1, bias=False),
+                    nn.BatchNorm1d(out_channels),
+                )
+                res_in_channels = out_channels
+            in_channels = out_channels
+
+        self.global_pool = nn.AdaptiveAvgPool1d(1)
+        self.proj = nn.Linear(in_channels, out_dim)
+        self.res_relu = nn.ReLU(inplace=True)
 
     def forward(self, x: torch.Tensor, lengths: torch.Tensor) -> torch.Tensor:
         """
         x: [B, T, 2]
-        lengths: [B] 真实长度（CNN 使用零填充，lengths 仅保留接口兼容）
+        lengths: [B] 真实长度（Inception 使用零填充，lengths 仅保留接口兼容）
         返回: [B, out_dim]
         """
         _ = lengths
-        # Conv1d 期望 [B, C, T]
         x = x.transpose(1, 2)  # [B, 2, T]
-        feats = self.feature_extractor(x).squeeze(-1)  # [B, 256]
-        out = self.proj(feats)  # [B, out_dim]
-        return out
+        for i, block in enumerate(self.blocks):
+            if self.use_residual and i % 3 == 0:
+                res_input = x
+            x = block(x)
+            if self.use_residual and (i + 1) % 3 == 0:
+                res = self.residuals[str(i)](res_input)
+                x = self.res_relu(x + res)
+        feats = self.global_pool(x).squeeze(-1)
+        return self.proj(feats)
 
 
 class MultiModalLateFusionNet(nn.Module):
@@ -320,7 +386,7 @@ class MultiModalLateFusionNet(nn.Module):
             f_min=f_min,
             f_max=f_max,
         )
-        self.sensor_encoder = SensorCNNEncoder(
+        self.sensor_encoder = InceptionTimeEncoder(
             input_dim=2,
             out_dim=sensor_feat_dim,
         )
