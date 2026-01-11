@@ -79,6 +79,7 @@ class ReadSegments(Dataset):
         target_sample_rate: Optional[int] = None,
         label2id: Optional[Dict[str, int]] = None,
         label_map_paths: Optional[Sequence[str]] = None,
+        group_normalize: bool = False,
     ):
         """
         paths: 一批 .npz 文件的路径
@@ -94,6 +95,7 @@ class ReadSegments(Dataset):
             raise ValueError("ReadSegments: no .npz files found!")
 
         self.target_sample_rate = target_sample_rate
+        self.group_normalize = group_normalize
 
         if label_normalizer is None:
             self.label_processor = DEFAULT_LABEL_PROCESSOR
@@ -128,6 +130,10 @@ class ReadSegments(Dataset):
                 print(f"  id={idx}: {lab}")
             if isinstance(self.label_normalizer, LabelProcessor):
                 print(self.label_normalizer.describe())
+
+        self.group_stats = None
+        if self.group_normalize:
+            self.group_stats = self._compute_group_stats(self.paths)
 
     # ---------- 内置：从所有 segment 里读原始 label ----------
 
@@ -180,6 +186,72 @@ class ReadSegments(Dataset):
         默认行为：委托给 util.label_processor.LabelProcessor() 的默认映射（fail fast，可包含 drop）。
         """
         return DEFAULT_LABEL_PROCESSOR(raw)
+
+    @staticmethod
+    def _group_key_from_path(path: str) -> str:
+        base = path.split("/")[-1]
+        if "_win" in base:
+            return base.split("_win")[0]
+        return base.rsplit(".", 1)[0]
+
+    @staticmethod
+    def _extract_pq(sensor_all: np.ndarray, col_names: List[str]) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+        p_idx = [i for i, name in enumerate(col_names) if "P_" in name]
+        q_idx = [i for i, name in enumerate(col_names) if "F_" in name]
+
+        def _take_or_none(idxs):
+            if len(idxs) == 0:
+                return None
+            vals = sensor_all[:, idxs]
+            if vals.shape[1] == 1:
+                vals = vals[:, 0]
+            return vals
+
+        return _take_or_none(p_idx), _take_or_none(q_idx)
+
+    def _compute_group_stats(self, paths: Sequence[str]) -> Dict[str, Dict[str, float]]:
+        stats: Dict[str, Dict[str, float]] = {}
+        for p in paths:
+            d = np.load(p, allow_pickle=True)
+            if "sensor_values" not in d or "sensor_cols" not in d:
+                continue
+            sensor_all = d["sensor_values"].astype(np.float32)
+            col_names = [str(c) for c in d["sensor_cols"]]
+            P, Q = self._extract_pq(sensor_all, col_names)
+            if P is None and Q is None:
+                continue
+            key = self._group_key_from_path(p)
+            bucket = stats.setdefault(
+                key,
+                {"p_sum": 0.0, "p_sumsq": 0.0, "p_count": 0,
+                 "q_sum": 0.0, "q_sumsq": 0.0, "q_count": 0},
+            )
+            if P is not None:
+                p_vals = P[:, 0] if P.ndim == 2 else P
+                bucket["p_sum"] += float(p_vals.sum())
+                bucket["p_sumsq"] += float((p_vals ** 2).sum())
+                bucket["p_count"] += int(p_vals.shape[0])
+            if Q is not None:
+                q_vals = Q[:, 0] if Q.ndim == 2 else Q
+                bucket["q_sum"] += float(q_vals.sum())
+                bucket["q_sumsq"] += float((q_vals ** 2).sum())
+                bucket["q_count"] += int(q_vals.shape[0])
+
+        out: Dict[str, Dict[str, float]] = {}
+        for key, bucket in stats.items():
+            p_count = max(1, bucket["p_count"])
+            q_count = max(1, bucket["q_count"])
+            p_mean = bucket["p_sum"] / p_count
+            q_mean = bucket["q_sum"] / q_count
+            p_var = max(0.0, bucket["p_sumsq"] / p_count - p_mean ** 2)
+            q_var = max(0.0, bucket["q_sumsq"] / q_count - q_mean ** 2)
+            out[key] = {
+                "p_mean": p_mean,
+                "p_std": max(p_var ** 0.5, 1e-6),
+                "q_mean": q_mean,
+                "q_std": max(q_var ** 0.5, 1e-6),
+            }
+        return out
 
 
         
@@ -235,6 +307,10 @@ class ReadSegments(Dataset):
             audio = wave.numpy().astype(np.float32)
             sr = self.target_sample_rate
 
+        audio = audio - float(audio.mean())
+        rms = float(np.sqrt(np.mean(audio ** 2)))
+        if rms > 1e-6:
+            audio = audio / rms
         audio_t = torch.from_numpy(audio)  # [T_audio_resampled]
 
         # ===== 2) sensor 全部数据 + 列名 =====
@@ -243,21 +319,37 @@ class ReadSegments(Dataset):
         col_names = [str(c) for c in sensor_cols]
 
         # 根据列名拆出 P / Q / T
-        p_idx = [i for i, name in enumerate(col_names) if "P_" in name]
-        q_idx = [i for i, name in enumerate(col_names) if "F_" in name]
+        P, Q = self._extract_pq(sensor_all, col_names)
         t_idx = [i for i, name in enumerate(col_names) if "T_" in name]
+        T = sensor_all[:, t_idx] if len(t_idx) > 0 else None
+        if T is not None and T.shape[1] == 1:
+            T = T[:, 0]
 
-        def _take_or_none(idxs):
-            if len(idxs) == 0:
-                return None
-            vals = sensor_all[:, idxs]  # [T_sensor, len(idxs)]
-            if vals.shape[1] == 1:
-                vals = vals[:, 0]       # -> [T_sensor]
-            return vals
-
-        P = _take_or_none(p_idx)
-        Q = _take_or_none(q_idx)
-        T = _take_or_none(t_idx)
+        if self.group_normalize and self.group_stats is not None:
+            key = self._group_key_from_path(path)
+            stats = self.group_stats.get(key)
+            if stats is not None:
+                if P is not None:
+                    p_vals = P[:, 0] if P.ndim == 2 else P
+                    p_vals = (p_vals - stats["p_mean"]) / stats["p_std"]
+                    P = p_vals if P.ndim == 1 else p_vals[:, None]
+                if Q is not None:
+                    q_vals = Q[:, 0] if Q.ndim == 2 else Q
+                    q_vals = (q_vals - stats["q_mean"]) / stats["q_std"]
+                    Q = q_vals if Q.ndim == 1 else q_vals[:, None]
+        else:
+            if P is not None:
+                p_vals = P[:, 0] if P.ndim == 2 else P
+                p_mean = float(p_vals.mean())
+                p_std = float(p_vals.std()) or 1e-6
+                p_vals = (p_vals - p_mean) / p_std
+                P = p_vals if P.ndim == 1 else p_vals[:, None]
+            if Q is not None:
+                q_vals = Q[:, 0] if Q.ndim == 2 else Q
+                q_mean = float(q_vals.mean())
+                q_std = float(q_vals.std()) or 1e-6
+                q_vals = (q_vals - q_mean) / q_std
+                Q = q_vals if Q.ndim == 1 else q_vals[:, None]
 
         sensor_all_t = torch.from_numpy(sensor_all)
         P_t = torch.from_numpy(P) if P is not None else None

@@ -73,14 +73,6 @@ def collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
             Q_main = Q_2d[:, 0:1]  # [T,1]
             sensor = torch.cat([P_main, Q_main], dim=-1)  # [T,2]
 
-        # Normalize each sensor channel to zero mean/unit variance per sample
-        channel_mean = sensor.mean(dim=0, keepdim=True)
-        channel_std = sensor.std(dim=0, keepdim=True)
-        channel_std = torch.where(
-            channel_std < 1e-6, torch.ones_like(channel_std), channel_std
-        )
-        sensor = (sensor - channel_mean) / channel_std
-
         sensor_seqs.append(sensor)
         lengths.append(sensor.shape[0])
         paths.append(b["path"])
@@ -206,6 +198,19 @@ def split_paths_by_group(
 # 2. 模型定义
 # ===========================
 
+def _replace_bn_with_gn(module: nn.Module, num_groups: int = 8) -> None:
+    for name, child in module.named_children():
+        if isinstance(child, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d)):
+            num_channels = child.num_features
+            gn = nn.GroupNorm(
+                num_groups=min(num_groups, num_channels),
+                num_channels=num_channels,
+                affine=True,
+            )
+            setattr(module, name, gn)
+        else:
+            _replace_bn_with_gn(child, num_groups=num_groups)
+
 class AudioResNetEncoder(nn.Module):
     """
     waveform -> MelSpectrogram -> ResNet18 -> audio feature
@@ -234,6 +239,7 @@ class AudioResNetEncoder(nn.Module):
 
         # resnet18 backbone（加载 ImageNet 预训练以提升收敛速度）
         self.backbone = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
+        _replace_bn_with_gn(self.backbone, num_groups=8)
         # 把输入改成单通道
         self.backbone.conv1 = nn.Conv2d(
             1, 64, kernel_size=7, stride=2, padding=3, bias=False
@@ -288,7 +294,11 @@ class InceptionBlock1D(nn.Module):
         )
         self.maxpool = nn.MaxPool1d(kernel_size=3, stride=1, padding=1)
         self.pool_conv = nn.Conv1d(in_channels, n_filters, kernel_size=1, bias=False)
-        self.bn = nn.BatchNorm1d(n_filters * (len(kernel_sizes) + 1))
+        out_channels = n_filters * (len(kernel_sizes) + 1)
+        self.bn = nn.GroupNorm(
+            num_groups=min(8, out_channels),
+            num_channels=out_channels,
+        )
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -336,7 +346,7 @@ class InceptionTimeEncoder(nn.Module):
             if self.use_residual and (i + 1) % 3 == 0:
                 self.residuals[str(i)] = nn.Sequential(
                     nn.Conv1d(res_in_channels, out_channels, kernel_size=1, bias=False),
-                    nn.BatchNorm1d(out_channels),
+                    nn.GroupNorm(num_groups=min(8, out_channels), num_channels=out_channels),
                 )
                 res_in_channels = out_channels
             in_channels = out_channels
@@ -647,6 +657,7 @@ def main():
         train_paths,
         target_sample_rate=target_sr,
         label_normalizer=label_processor,
+        group_normalize=True,
     )
     # 验证集复用训练集的 label2id，防止类别排序/缺失造成指标错位
     val_ds   = ReadSegments(
@@ -655,6 +666,7 @@ def main():
         label_normalizer=label_processor,
         label2id=train_ds.label2id,
         label_map_paths=train_paths,
+        group_normalize=True,
     )
 
     num_classes = len(train_ds.label2id)

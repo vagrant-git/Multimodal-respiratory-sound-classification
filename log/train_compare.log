@@ -1,5 +1,5 @@
 ================================================================================
-Run started at 2025-12-29T20:50:59
+Run started at 2026-01-11T15:12:25
 Label mapping (canonical -> class_token):
   '3ml secretion' -> 'secretion'
   '3ml secretion (with hemf)' -> 'secretion'
@@ -12,11 +12,114 @@ Label mapping (canonical -> class_token):
 Total segments: 774, train=417, val=357, groups=13
 num_classes = 2 label2id = {'no_secretion': 0, 'secretion': 1}
 Class counts: [238.0, 179.0] | sampler weights: [0.004201680887490511, 0.005586592014878988]
-Epoch 01: lr=3.00e-04 | train_loss=0.1507 | full: loss=0.9972, acc=0.3838 | audio_only: loss=0.9545, acc=0.3782 | sensor_only: loss=0.6796, acc=0.5658
+Epoch 01: lr=3.00e-04 | train_loss=0.6941 | full: loss=0.6829, acc=0.5210 | audio_only: loss=0.7365, acc=0.4986 | sensor_only: loss=0.7208, acc=0.5014
   Confusion matrix (rows=true, cols=pred):
-tensor([[122,  57],
-        [163,  15]])
+tensor([[166,  13],
+        [158,  20]])
   Per-class precision/recall:
-    no_secretion: precision=0.428, recall=0.682
-    secretion: precision=0.208, recall=0.084
-  -> New best full_acc=0.3838! Saved to checkpoints/best_multimodal.pt
+    no_secretion: precision=0.512, recall=0.927
+    secretion: precision=0.606, recall=0.112
+  -> New best full_acc=0.5210! Saved to checkpoints/best_multimodal.pt
+Epoch 02: lr=3.00e-04 | train_loss=0.6021 | full: loss=0.6596, acc=0.5910 | audio_only: loss=0.7625, acc=0.4986 | sensor_only: loss=0.6947, acc=0.5266
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 85,  94],
+        [ 52, 126]])
+  Per-class precision/recall:
+    no_secretion: precision=0.620, recall=0.475
+    secretion: precision=0.573, recall=0.708
+  -> New best full_acc=0.5910! Saved to checkpoints/best_multimodal.pt
+Epoch 03: lr=3.00e-04 | train_loss=0.4432 | full: loss=0.7516, acc=0.5966 | audio_only: loss=0.8840, acc=0.4986 | sensor_only: loss=0.7074, acc=0.5518
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 78, 101],
+        [ 43, 135]])
+  Per-class precision/recall:
+    no_secretion: precision=0.645, recall=0.436
+    secretion: precision=0.572, recall=0.758
+  -> New best full_acc=0.5966! Saved to checkpoints/best_multimodal.pt
+Epoch 04: lr=3.00e-04 | train_loss=0.2289 | full: loss=1.2058, acc=0.6106 | audio_only: loss=1.1192, acc=0.4986 | sensor_only: loss=0.7611, acc=0.5910
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 70, 109],
+        [ 30, 148]])
+  Per-class precision/recall:
+    no_secretion: precision=0.700, recall=0.391
+    secretion: precision=0.576, recall=0.831
+  -> New best full_acc=0.6106! Saved to checkpoints/best_multimodal.pt
+Epoch 05: lr=3.00e-04 | train_loss=0.1291 | full: loss=1.1089, acc=0.5630 | audio_only: loss=0.7867, acc=0.5014 | sensor_only: loss=0.9049, acc=0.5602
+  Confusion matrix (rows=true, cols=pred):
+tensor([[112,  67],
+        [ 89,  89]])
+  Per-class precision/recall:
+    no_secretion: precision=0.557, recall=0.626
+    secretion: precision=0.571, recall=0.500
+Epoch 06: lr=3.00e-04 | train_loss=0.2576 | full: loss=1.2058, acc=0.6471 | audio_only: loss=1.5531, acc=0.4986 | sensor_only: loss=0.8609, acc=0.5406
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 69, 110],
+        [ 16, 162]])
+  Per-class precision/recall:
+    no_secretion: precision=0.812, recall=0.385
+    secretion: precision=0.596, recall=0.910
+  -> New best full_acc=0.6471! Saved to checkpoints/best_multimodal.pt
+Epoch 07: lr=3.00e-04 | train_loss=0.1147 | full: loss=0.6257, acc=0.7395 | audio_only: loss=1.2365, acc=0.6695 | sensor_only: loss=1.0371, acc=0.5154
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 88,  91],
+        [  2, 176]])
+  Per-class precision/recall:
+    no_secretion: precision=0.978, recall=0.492
+    secretion: precision=0.659, recall=0.989
+  -> New best full_acc=0.7395! Saved to checkpoints/best_multimodal.pt
+Epoch 08: lr=3.00e-04 | train_loss=0.0189 | full: loss=1.8463, acc=0.6835 | audio_only: loss=2.3319, acc=0.6723 | sensor_only: loss=1.0140, acc=0.5182
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 66, 113],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.369
+    secretion: precision=0.612, recall=1.000
+Epoch 09: lr=3.00e-04 | train_loss=0.0028 | full: loss=2.3469, acc=0.6807 | audio_only: loss=2.7305, acc=0.6779 | sensor_only: loss=1.0117, acc=0.5238
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 65, 114],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.363
+    secretion: precision=0.610, recall=1.000
+Epoch 10: lr=3.00e-04 | train_loss=0.0009 | full: loss=2.5751, acc=0.6863 | audio_only: loss=2.9196, acc=0.6779 | sensor_only: loss=1.0299, acc=0.5238
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 67, 112],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.374
+    secretion: precision=0.614, recall=1.000
+Epoch 11: lr=3.00e-04 | train_loss=0.0003 | full: loss=2.7189, acc=0.6891 | audio_only: loss=3.0449, acc=0.6779 | sensor_only: loss=1.0421, acc=0.5238
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 68, 111],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.380
+    secretion: precision=0.616, recall=1.000
+Epoch 12: lr=1.50e-04 | train_loss=0.0002 | full: loss=2.7737, acc=0.6891 | audio_only: loss=3.0941, acc=0.6779 | sensor_only: loss=1.0469, acc=0.5238
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 68, 111],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.380
+    secretion: precision=0.616, recall=1.000
+Epoch 13: lr=1.50e-04 | train_loss=0.0002 | full: loss=2.8136, acc=0.6891 | audio_only: loss=3.1301, acc=0.6779 | sensor_only: loss=1.0530, acc=0.5238
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 68, 111],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.380
+    secretion: precision=0.616, recall=1.000
+Epoch 14: lr=1.50e-04 | train_loss=0.0001 | full: loss=2.8402, acc=0.6891 | audio_only: loss=3.1546, acc=0.6779 | sensor_only: loss=1.0597, acc=0.5238
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 68, 111],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.380
+    secretion: precision=0.616, recall=1.000
+Epoch 15: lr=1.50e-04 | train_loss=0.0001 | full: loss=2.8698, acc=0.6891 | audio_only: loss=3.1814, acc=0.6779 | sensor_only: loss=1.0661, acc=0.5238
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 68, 111],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.380
+    secretion: precision=0.616, recall=1.000
