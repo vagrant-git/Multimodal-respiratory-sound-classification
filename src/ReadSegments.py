@@ -216,6 +216,7 @@ class ReadSegments(Dataset):
             if "sensor_values" not in d or "sensor_cols" not in d:
                 continue
             sensor_all = d["sensor_values"].astype(np.float32)
+            sensor_all = np.nan_to_num(sensor_all, nan=0.0, posinf=0.0, neginf=0.0)
             col_names = [str(c) for c in d["sensor_cols"]]
             P, Q = self._extract_pq(sensor_all, col_names)
             if P is None and Q is None:
@@ -307,14 +308,11 @@ class ReadSegments(Dataset):
             audio = wave.numpy().astype(np.float32)
             sr = self.target_sample_rate
 
-        audio = audio - float(audio.mean())
-        rms = float(np.sqrt(np.mean(audio ** 2)))
-        if rms > 1e-6:
-            audio = audio / rms
         audio_t = torch.from_numpy(audio)  # [T_audio_resampled]
 
         # ===== 2) sensor 全部数据 + 列名 =====
         sensor_all = d["sensor_values"].astype(np.float32)  # [T_sensor, C]
+        sensor_all = np.nan_to_num(sensor_all, nan=0.0, posinf=0.0, neginf=0.0)
         sensor_cols = d["sensor_cols"]                      # array of str
         col_names = [str(c) for c in sensor_cols]
 

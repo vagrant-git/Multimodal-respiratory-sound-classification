@@ -1,0 +1,85 @@
+================================================================================
+Run started at 2026-01-11T19:44:43
+Label mapping (canonical -> class_token):
+  '3ml secretion' -> 'secretion'
+  '3ml secretion (with hemf)' -> 'secretion'
+  '3ml secretion m4' -> 'secretion'
+  '5ml secretion' -> 'secretion'
+  '5ml secretion m4' -> 'secretion'
+  'no secretion' -> 'no_secretion'
+  'no secretion sound' -> 'no_secretion'
+  'no secretion sound (with hemf)' -> 'no_secretion'
+Total segments: 594, train=297, val=297, groups=10
+num_classes = 2 label2id = {'no_secretion': 0, 'secretion': 1}
+Class counts: [118.0, 179.0] | sampler weights: [0.008474576286971569, 0.005586592014878988]
+Stage 1: supervised contrastive pretrain (audio)
+[SupCon:audio] epoch=01 loss=4.1186
+[SupCon:audio] epoch=02 loss=4.1148
+[SupCon:audio] epoch=03 loss=4.1266
+[SupCon:audio] epoch=04 loss=4.1305
+[SupCon:audio] epoch=05 loss=4.1164
+[SupCon:audio] epoch=06 loss=4.0271
+[SupCon:audio] epoch=07 loss=3.7087
+[SupCon:audio] epoch=08 loss=3.7113
+[SupCon:audio] epoch=09 loss=3.6042
+[SupCon:audio] epoch=10 loss=3.5137
+[SupCon:audio] epoch=11 loss=3.6302
+[SupCon:audio] epoch=12 loss=3.7993
+[SupCon:audio] epoch=13 loss=3.4663
+[SupCon:audio] epoch=14 loss=3.5290
+[SupCon:audio] epoch=15 loss=3.4383
+[SupCon:audio] epoch=16 loss=3.4678
+[SupCon:audio] epoch=17 loss=3.4734
+[SupCon:audio] epoch=18 loss=3.4716
+[SupCon:audio] epoch=19 loss=3.4369
+[SupCon:audio] epoch=20 loss=3.4497
+Stage 2: supervised contrastive pretrain (sensor)
+[SupCon:sensor] epoch=01 loss=4.1393
+[SupCon:sensor] epoch=02 loss=4.1422
+[SupCon:sensor] epoch=03 loss=4.1386
+[SupCon:sensor] epoch=04 loss=4.1389
+[SupCon:sensor] epoch=05 loss=4.1291
+[SupCon:sensor] epoch=06 loss=4.1336
+[SupCon:sensor] epoch=07 loss=4.1329
+[SupCon:sensor] epoch=08 loss=4.1229
+[SupCon:sensor] epoch=09 loss=4.1363
+[SupCon:sensor] epoch=10 loss=4.1245
+[SupCon:sensor] epoch=11 loss=4.1239
+[SupCon:sensor] epoch=12 loss=4.1144
+[SupCon:sensor] epoch=13 loss=4.1106
+[SupCon:sensor] epoch=14 loss=4.0829
+[SupCon:sensor] epoch=15 loss=4.0982
+[SupCon:sensor] epoch=16 loss=4.1113
+[SupCon:sensor] epoch=17 loss=4.1039
+[SupCon:sensor] epoch=18 loss=4.1389
+[SupCon:sensor] epoch=19 loss=4.1344
+[SupCon:sensor] epoch=20 loss=4.1318
+Stage 3: linear classifier (audio)
+[Cls:audio] epoch=01 loss=0.8785
+[Cls:audio] epoch=02 loss=0.5675
+[Cls:audio] epoch=03 loss=0.4217
+[Cls:audio] epoch=04 loss=0.2712
+[Cls:audio] epoch=05 loss=0.1882
+[Cls:audio] epoch=06 loss=0.1410
+[Cls:audio] epoch=07 loss=0.1067
+[Cls:audio] epoch=08 loss=0.0822
+[Cls:audio] epoch=09 loss=0.0690
+[Cls:audio] epoch=10 loss=0.0568
+Stage 4: linear classifier (sensor)
+[Cls:sensor] epoch=01 loss=0.6888
+[Cls:sensor] epoch=02 loss=0.6855
+[Cls:sensor] epoch=03 loss=0.6805
+[Cls:sensor] epoch=04 loss=0.6770
+[Cls:sensor] epoch=05 loss=0.6714
+[Cls:sensor] epoch=06 loss=0.6762
+[Cls:sensor] epoch=07 loss=0.6663
+[Cls:sensor] epoch=08 loss=0.6730
+[Cls:sensor] epoch=09 loss=0.6693
+[Cls:sensor] epoch=10 loss=0.6686
+Stage 5: logit stacking
+Audio train acc: 1.0000
+Sensor train acc: 0.6229
+Stacking weights: w0=0.3331 w1=1.0381 w2=1.0485
+Audio val acc: 0.5993
+Sensor val acc: 0.4882
+Stacked val acc: 0.5993
