@@ -1,5 +1,5 @@
 ================================================================================
-Run started at 2026-01-11T19:44:43
+Run started at 2026-01-13T20:26:47
 Label mapping (canonical -> class_token):
   '3ml secretion' -> 'secretion'
   '3ml secretion (with hemf)' -> 'secretion'
@@ -9,77 +9,114 @@ Label mapping (canonical -> class_token):
   'no secretion' -> 'no_secretion'
   'no secretion sound' -> 'no_secretion'
   'no secretion sound (with hemf)' -> 'no_secretion'
-Total segments: 594, train=297, val=297, groups=10
+Total segments: 95, train=55, val=40, groups=19
 num_classes = 2 label2id = {'no_secretion': 0, 'secretion': 1}
-Class counts: [118.0, 179.0] | sampler weights: [0.008474576286971569, 0.005586592014878988]
+Class counts: [25.0, 30.0] | sampler weights: [0.03999999910593033, 0.03333333507180214]
+SupCon batch_size adjusted from 64 to 20 to fit group sizes (max samples_per_group=5).
+SupCon cfg: temp=0.07 allow_same_group=False groups_per_class=2 samples_per_group=5 batch_size=20 sensor_aug=off
 Stage 1: supervised contrastive pretrain (audio)
-[SupCon:audio] epoch=01 loss=4.1186
-[SupCon:audio] epoch=02 loss=4.1148
-[SupCon:audio] epoch=03 loss=4.1266
-[SupCon:audio] epoch=04 loss=4.1305
-[SupCon:audio] epoch=05 loss=4.1164
-[SupCon:audio] epoch=06 loss=4.0271
-[SupCon:audio] epoch=07 loss=3.7087
-[SupCon:audio] epoch=08 loss=3.7113
-[SupCon:audio] epoch=09 loss=3.6042
-[SupCon:audio] epoch=10 loss=3.5137
-[SupCon:audio] epoch=11 loss=3.6302
-[SupCon:audio] epoch=12 loss=3.7993
-[SupCon:audio] epoch=13 loss=3.4663
-[SupCon:audio] epoch=14 loss=3.5290
-[SupCon:audio] epoch=15 loss=3.4383
-[SupCon:audio] epoch=16 loss=3.4678
-[SupCon:audio] epoch=17 loss=3.4734
-[SupCon:audio] epoch=18 loss=3.4716
-[SupCon:audio] epoch=19 loss=3.4369
-[SupCon:audio] epoch=20 loss=3.4497
+[SupCon:audio] epoch=01 loss=2.9600
+[SupCon:audio] epoch=02 loss=2.9445
+[SupCon:audio] epoch=03 loss=2.9445
+[SupCon:audio] epoch=04 loss=2.9445
+[SupCon:audio] epoch=05 loss=2.9444
+[SupCon:audio] epoch=06 loss=2.9445
+[SupCon:audio] epoch=07 loss=2.9444
+[SupCon:audio] epoch=08 loss=2.9444
+[SupCon:audio] epoch=09 loss=2.9444
+[SupCon:audio] epoch=10 loss=2.9444
+[SupCon:audio] epoch=11 loss=2.9444
+[SupCon:audio] epoch=12 loss=2.9444
+[SupCon:audio] epoch=13 loss=2.9444
+[SupCon:audio] epoch=14 loss=2.9444
+[SupCon:audio] epoch=15 loss=2.9444
+[SupCon:audio] epoch=16 loss=2.9444
+[SupCon:audio] epoch=17 loss=2.9444
+[SupCon:audio] epoch=18 loss=2.9444
+[SupCon:audio] epoch=19 loss=2.9444
+[SupCon:audio] epoch=20 loss=2.9444
 Stage 2: supervised contrastive pretrain (sensor)
-[SupCon:sensor] epoch=01 loss=4.1393
-[SupCon:sensor] epoch=02 loss=4.1422
-[SupCon:sensor] epoch=03 loss=4.1386
-[SupCon:sensor] epoch=04 loss=4.1389
-[SupCon:sensor] epoch=05 loss=4.1291
-[SupCon:sensor] epoch=06 loss=4.1336
-[SupCon:sensor] epoch=07 loss=4.1329
-[SupCon:sensor] epoch=08 loss=4.1229
-[SupCon:sensor] epoch=09 loss=4.1363
-[SupCon:sensor] epoch=10 loss=4.1245
-[SupCon:sensor] epoch=11 loss=4.1239
-[SupCon:sensor] epoch=12 loss=4.1144
-[SupCon:sensor] epoch=13 loss=4.1106
-[SupCon:sensor] epoch=14 loss=4.0829
-[SupCon:sensor] epoch=15 loss=4.0982
-[SupCon:sensor] epoch=16 loss=4.1113
-[SupCon:sensor] epoch=17 loss=4.1039
-[SupCon:sensor] epoch=18 loss=4.1389
-[SupCon:sensor] epoch=19 loss=4.1344
-[SupCon:sensor] epoch=20 loss=4.1318
+[SupCon:sensor] epoch=01 loss=2.9763
+[SupCon:sensor] epoch=02 loss=2.9407
+[SupCon:sensor] epoch=03 loss=2.9472
+[SupCon:sensor] epoch=04 loss=2.9477
+[SupCon:sensor] epoch=05 loss=2.9465
+[SupCon:sensor] epoch=06 loss=2.9448
+[SupCon:sensor] epoch=07 loss=2.9440
+[SupCon:sensor] epoch=08 loss=2.9453
+[SupCon:sensor] epoch=09 loss=2.9442
+[SupCon:sensor] epoch=10 loss=2.9435
+[SupCon:sensor] epoch=11 loss=2.9443
+[SupCon:sensor] epoch=12 loss=2.9444
+[SupCon:sensor] epoch=13 loss=2.9445
+[SupCon:sensor] epoch=14 loss=2.9446
+[SupCon:sensor] epoch=15 loss=2.9445
+[SupCon:sensor] epoch=16 loss=2.9444
+[SupCon:sensor] epoch=17 loss=2.9440
+[SupCon:sensor] epoch=18 loss=2.9437
+[SupCon:sensor] epoch=19 loss=2.9440
+[SupCon:sensor] epoch=20 loss=2.9439
 Stage 3: linear classifier (audio)
-[Cls:audio] epoch=01 loss=0.8785
-[Cls:audio] epoch=02 loss=0.5675
-[Cls:audio] epoch=03 loss=0.4217
-[Cls:audio] epoch=04 loss=0.2712
-[Cls:audio] epoch=05 loss=0.1882
-[Cls:audio] epoch=06 loss=0.1410
-[Cls:audio] epoch=07 loss=0.1067
-[Cls:audio] epoch=08 loss=0.0822
-[Cls:audio] epoch=09 loss=0.0690
-[Cls:audio] epoch=10 loss=0.0568
+[Cls:audio] epoch=01 loss=0.7392
+[Cls:audio] epoch=02 loss=0.6985
+[Cls:audio] epoch=03 loss=0.7463
+[Cls:audio] epoch=04 loss=0.7197
+[Cls:audio] epoch=05 loss=0.6926
+[Cls:audio] epoch=06 loss=0.6889
+[Cls:audio] epoch=07 loss=0.6732
+[Cls:audio] epoch=08 loss=0.7291
+[Cls:audio] epoch=09 loss=0.6946
+[Cls:audio] epoch=10 loss=0.7504
+Stage 3b: finetune (audio)
+[Finetune:audio] epoch=01 train_loss=0.7258 val_loss=0.8601 val_acc=0.5000
+[Finetune:audio] confusion:
+tensor([[20,  0],
+        [20,  0]])
+[Finetune:audio] epoch=02 train_loss=0.9358 val_loss=0.7222 val_acc=0.5000
+[Finetune:audio] confusion:
+tensor([[20,  0],
+        [20,  0]])
+[Finetune:audio] epoch=03 train_loss=0.6910 val_loss=0.6989 val_acc=0.5000
+[Finetune:audio] confusion:
+tensor([[ 0, 20],
+        [ 0, 20]])
+[Finetune:audio] epoch=04 train_loss=0.6709 val_loss=0.8026 val_acc=0.5000
+[Finetune:audio] confusion:
+tensor([[ 0, 20],
+        [ 0, 20]])
 Stage 4: linear classifier (sensor)
-[Cls:sensor] epoch=01 loss=0.6888
-[Cls:sensor] epoch=02 loss=0.6855
-[Cls:sensor] epoch=03 loss=0.6805
-[Cls:sensor] epoch=04 loss=0.6770
-[Cls:sensor] epoch=05 loss=0.6714
-[Cls:sensor] epoch=06 loss=0.6762
-[Cls:sensor] epoch=07 loss=0.6663
-[Cls:sensor] epoch=08 loss=0.6730
-[Cls:sensor] epoch=09 loss=0.6693
-[Cls:sensor] epoch=10 loss=0.6686
+[Cls:sensor] epoch=01 loss=0.7350
+[Cls:sensor] epoch=02 loss=0.7072
+[Cls:sensor] epoch=03 loss=0.6928
+[Cls:sensor] epoch=04 loss=0.7064
+[Cls:sensor] epoch=05 loss=0.6719
+[Cls:sensor] epoch=06 loss=0.7047
+[Cls:sensor] epoch=07 loss=0.6999
+[Cls:sensor] epoch=08 loss=0.7408
+[Cls:sensor] epoch=09 loss=0.7495
+[Cls:sensor] epoch=10 loss=0.6675
+Stage 4b: finetune (sensor)
+[Finetune:sensor] epoch=01 train_loss=0.7075 val_loss=0.6991 val_acc=0.5000
+[Finetune:sensor] confusion:
+tensor([[ 0, 20],
+        [ 0, 20]])
+[Finetune:sensor] epoch=02 train_loss=0.6901 val_loss=0.7191 val_acc=0.5000
+[Finetune:sensor] confusion:
+tensor([[ 0, 20],
+        [ 0, 20]])
+[Finetune:sensor] epoch=03 train_loss=0.7263 val_loss=0.7044 val_acc=0.5000
+[Finetune:sensor] confusion:
+tensor([[ 0, 20],
+        [ 0, 20]])
+[Finetune:sensor] epoch=04 train_loss=0.6886 val_loss=0.6950 val_acc=0.5000
+[Finetune:sensor] confusion:
+tensor([[ 0, 20],
+        [ 0, 20]])
 Stage 5: logit stacking
-Audio train acc: 1.0000
-Sensor train acc: 0.6229
-Stacking weights: w0=0.3331 w1=1.0381 w2=1.0485
-Audio val acc: 0.5993
-Sensor val acc: 0.4882
-Stacked val acc: 0.5993
+Audio train acc: 0.4545
+Sensor train acc: 0.5455
+Stacking weights: w0=0.0263 w1=-0.0275 w2=0.7703
+Audio val acc: 0.5000
+Sensor val acc: 0.5000
+Stacked val acc: 0.5000
+Saved SupCon stack checkpoint to checkpoints/supcon_stack.pt

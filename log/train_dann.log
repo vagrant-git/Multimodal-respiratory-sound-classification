@@ -1,0 +1,229 @@
+================================================================================
+Run started at 2026-01-13T14:27:10
+Label mapping (canonical -> class_token):
+  '3ml secretion' -> 'secretion'
+  '3ml secretion (with hemf)' -> 'secretion'
+  '3ml secretion m4' -> 'secretion'
+  '5ml secretion' -> 'secretion'
+  '5ml secretion m4' -> 'secretion'
+  'no secretion' -> 'no_secretion'
+  'no secretion sound' -> 'no_secretion'
+  'no secretion sound (with hemf)' -> 'no_secretion'
+Total segments: 594, train=297, val=297, groups=10
+num_classes = 2 label2id = {'no_secretion': 0, 'secretion': 1}
+num_domains = 5
+Class counts: [118.0, 179.0] | sampler weights: [0.008474576286971569, 0.005586592014878988]
+Epoch 01: lr=3.00e-04 | train_loss=2.3441 (cls=0.7123, dom=1.6318) | train_acc=0.5152 dom_acc=0.2290 | val_loss=0.6652 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[  0, 119],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=0.000, recall=0.000
+    secretion: precision=0.599, recall=1.000
+  -> New best val_acc=0.5993! Saved to checkpoints/best_multimodal_dann.pt
+Epoch 02: lr=3.00e-04 | train_loss=2.3370 (cls=0.7428, dom=1.5942) | train_acc=0.5152 dom_acc=0.2795 | val_loss=0.7529 val_acc=0.4007
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [178,   0]])
+  Per-class precision/recall:
+    no_secretion: precision=0.401, recall=1.000
+    secretion: precision=0.000, recall=0.000
+Epoch 03: lr=3.00e-04 | train_loss=2.3751 (cls=0.7157, dom=1.6594) | train_acc=0.5017 dom_acc=0.1886 | val_loss=0.6635 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[  0, 119],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=0.000, recall=0.000
+    secretion: precision=0.599, recall=1.000
+Epoch 04: lr=3.00e-04 | train_loss=2.4799 (cls=0.6897, dom=1.7902) | train_acc=0.5657 dom_acc=0.1582 | val_loss=0.6936 val_acc=0.4007
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [178,   0]])
+  Per-class precision/recall:
+    no_secretion: precision=0.401, recall=1.000
+    secretion: precision=0.000, recall=0.000
+Epoch 05: lr=3.00e-04 | train_loss=2.6251 (cls=0.6934, dom=1.9317) | train_acc=0.5455 dom_acc=0.1717 | val_loss=0.6616 val_acc=0.7811
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 64,  55],
+        [ 10, 168]])
+  Per-class precision/recall:
+    no_secretion: precision=0.865, recall=0.538
+    secretion: precision=0.753, recall=0.944
+  -> New best val_acc=0.7811! Saved to checkpoints/best_multimodal_dann.pt
+Epoch 06: lr=3.00e-04 | train_loss=2.4984 (cls=0.6911, dom=1.8072) | train_acc=0.5589 dom_acc=0.1751 | val_loss=0.6664 val_acc=0.4175
+  Confusion matrix (rows=true, cols=pred):
+tensor([[118,   1],
+        [172,   6]])
+  Per-class precision/recall:
+    no_secretion: precision=0.407, recall=0.992
+    secretion: precision=0.857, recall=0.034
+Epoch 07: lr=3.00e-04 | train_loss=2.4157 (cls=0.5851, dom=1.8305) | train_acc=0.6667 dom_acc=0.1616 | val_loss=0.5326 val_acc=0.7811
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 64,  55],
+        [ 10, 168]])
+  Per-class precision/recall:
+    no_secretion: precision=0.865, recall=0.538
+    secretion: precision=0.753, recall=0.944
+Epoch 08: lr=3.00e-04 | train_loss=3.1223 (cls=0.5620, dom=2.5602) | train_acc=0.6532 dom_acc=0.0101 | val_loss=0.4796 val_acc=0.7980
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 59,  60],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.496
+    secretion: precision=0.748, recall=1.000
+  -> New best val_acc=0.7980! Saved to checkpoints/best_multimodal_dann.pt
+Epoch 09: lr=3.00e-04 | train_loss=3.1832 (cls=0.5352, dom=2.6479) | train_acc=0.7104 dom_acc=0.1347 | val_loss=0.5006 val_acc=0.7980
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 59,  60],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.496
+    secretion: precision=0.748, recall=1.000
+Epoch 10: lr=3.00e-04 | train_loss=2.8869 (cls=0.5323, dom=2.3546) | train_acc=0.7306 dom_acc=0.2054 | val_loss=0.5052 val_acc=0.7980
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 59,  60],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.496
+    secretion: precision=0.748, recall=1.000
+Epoch 11: lr=3.00e-04 | train_loss=2.9294 (cls=0.5814, dom=2.3480) | train_acc=0.6599 dom_acc=0.1481 | val_loss=0.5729 val_acc=0.7980
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 59,  60],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.496
+    secretion: precision=0.748, recall=1.000
+Epoch 12: lr=3.00e-04 | train_loss=3.5014 (cls=0.5830, dom=2.9184) | train_acc=0.6700 dom_acc=0.1279 | val_loss=0.7920 val_acc=0.4007
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [178,   0]])
+  Per-class precision/recall:
+    no_secretion: precision=0.401, recall=1.000
+    secretion: precision=0.000, recall=0.000
+Epoch 13: lr=1.50e-04 | train_loss=3.8434 (cls=0.5333, dom=3.3101) | train_acc=0.7508 dom_acc=0.0168 | val_loss=0.6964 val_acc=0.4007
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [178,   0]])
+  Per-class precision/recall:
+    no_secretion: precision=0.401, recall=1.000
+    secretion: precision=0.000, recall=0.000
+Epoch 14: lr=1.50e-04 | train_loss=3.9405 (cls=0.6319, dom=3.3086) | train_acc=0.5960 dom_acc=0.0000 | val_loss=0.6038 val_acc=0.4007
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [178,   0]])
+  Per-class precision/recall:
+    no_secretion: precision=0.401, recall=1.000
+    secretion: precision=0.000, recall=0.000
+Epoch 15: lr=1.50e-04 | train_loss=3.7823 (cls=0.5915, dom=3.1908) | train_acc=0.6970 dom_acc=0.0034 | val_loss=0.4912 val_acc=0.7980
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 59,  60],
+        [  0, 178]])
+  Per-class precision/recall:
+    no_secretion: precision=1.000, recall=0.496
+    secretion: precision=0.748, recall=1.000
+Epoch 16: lr=1.50e-04 | train_loss=3.1476 (cls=0.6265, dom=2.5211) | train_acc=0.6599 dom_acc=0.0370 | val_loss=0.5556 val_acc=0.6465
+  Confusion matrix (rows=true, cols=pred):
+tensor([[ 65,  54],
+        [ 51, 127]])
+  Per-class precision/recall:
+    no_secretion: precision=0.560, recall=0.546
+    secretion: precision=0.702, recall=0.713
+Epoch 17: lr=7.50e-05 | train_loss=2.5409 (cls=0.4490, dom=2.0920) | train_acc=0.7710 dom_acc=0.1515 | val_loss=1.2107 val_acc=0.5825
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [124,  54]])
+  Per-class precision/recall:
+    no_secretion: precision=0.490, recall=1.000
+    secretion: precision=1.000, recall=0.303
+Epoch 18: lr=7.50e-05 | train_loss=2.2382 (cls=0.2779, dom=1.9603) | train_acc=0.8990 dom_acc=0.1953 | val_loss=1.6566 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 19: lr=7.50e-05 | train_loss=2.2088 (cls=0.1825, dom=2.0262) | train_acc=0.9562 dom_acc=0.2189 | val_loss=2.5719 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 20: lr=7.50e-05 | train_loss=2.1783 (cls=0.0826, dom=2.0957) | train_acc=0.9933 dom_acc=0.1886 | val_loss=3.9537 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 21: lr=3.75e-05 | train_loss=2.3820 (cls=0.0679, dom=2.3141) | train_acc=0.9966 dom_acc=0.1616 | val_loss=4.4349 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 22: lr=3.75e-05 | train_loss=2.4800 (cls=0.0708, dom=2.4092) | train_acc=1.0000 dom_acc=0.1919 | val_loss=4.8541 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 23: lr=3.75e-05 | train_loss=2.5695 (cls=0.0725, dom=2.4969) | train_acc=0.9899 dom_acc=0.1347 | val_loss=5.2232 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 24: lr=3.75e-05 | train_loss=2.5645 (cls=0.0697, dom=2.4948) | train_acc=1.0000 dom_acc=0.1650 | val_loss=5.0927 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 25: lr=1.87e-05 | train_loss=2.6096 (cls=0.0674, dom=2.5421) | train_acc=0.9966 dom_acc=0.1077 | val_loss=5.3535 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 26: lr=1.87e-05 | train_loss=2.6083 (cls=0.0666, dom=2.5417) | train_acc=0.9966 dom_acc=0.1347 | val_loss=5.5277 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 27: lr=1.87e-05 | train_loss=2.4136 (cls=0.0523, dom=2.3613) | train_acc=0.9966 dom_acc=0.1684 | val_loss=5.3102 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 28: lr=1.87e-05 | train_loss=2.4437 (cls=0.0637, dom=2.3800) | train_acc=0.9933 dom_acc=0.1717 | val_loss=5.4464 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 29: lr=1.00e-05 | train_loss=2.3775 (cls=0.0494, dom=2.3282) | train_acc=1.0000 dom_acc=0.1818 | val_loss=5.4335 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Epoch 30: lr=1.00e-05 | train_loss=2.4371 (cls=0.0537, dom=2.3835) | train_acc=1.0000 dom_acc=0.1650 | val_loss=5.4811 val_acc=0.5993
+  Confusion matrix (rows=true, cols=pred):
+tensor([[119,   0],
+        [119,  59]])
+  Per-class precision/recall:
+    no_secretion: precision=0.500, recall=1.000
+    secretion: precision=1.000, recall=0.331
+Early stopping triggered at epoch 30: no val-accuracy improvement for 5 epochs.

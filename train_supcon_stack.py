@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, WeightedRandomSampler, Sampler
 import torchaudio
+import torchaudio.functional as AF
 import torchvision.models as models
 
 from src.ReadSegments import ReadSegments, find_segment_paths
@@ -208,12 +209,232 @@ def split_paths_by_group(
     return train_paths, val_paths
 
 
+def resolve_supcon_batch_config(
+    labels: List[int],
+    groups: List[str],
+    batch_size: int,
+    groups_per_class: int,
+    log_fn=None,
+) -> Tuple[int, int, int]:
+    if len(labels) != len(groups):
+        raise ValueError("labels and groups must have the same length.")
+    if not labels:
+        raise ValueError("SupCon config requires at least one sample.")
+
+    class_labels = sorted({int(lab) for lab in labels})
+    if len(class_labels) != 2:
+        raise ValueError("SupCon expects exactly 2 classes.")
+    if groups_per_class < 1:
+        raise ValueError("SupCon groups_per_class must be >= 1.")
+
+    group_sizes: Dict[int, Dict[str, int]] = {lab: {} for lab in class_labels}
+    for lab, group in zip(labels, groups):
+        lab = int(lab)
+        group_sizes[lab][group] = group_sizes[lab].get(group, 0) + 1
+
+    min_groups = min(len(gmap) for gmap in group_sizes.values())
+    if min_groups < 1:
+        raise ValueError("SupCon requires at least one group per class in the train split.")
+
+    max_groups_by_batch = batch_size // len(class_labels)
+    if max_groups_by_batch < 1:
+        raise ValueError("SupCon batch_size too small for the number of classes.")
+
+    new_groups_per_class = min(groups_per_class, min_groups, max_groups_by_batch)
+    if new_groups_per_class != groups_per_class and log_fn is not None:
+        log_fn(
+            "SupCon groups_per_class adjusted from {} to {} based on train groups/batch size.".format(
+                groups_per_class, new_groups_per_class
+            )
+        )
+    groups_per_class = new_groups_per_class
+
+    base = len(class_labels) * groups_per_class
+    if batch_size % base != 0:
+        adjusted = (batch_size // base) * base
+        if adjusted < base:
+            adjusted = base
+        if log_fn is not None and adjusted != batch_size:
+            log_fn(
+                "SupCon batch_size adjusted from {} to {} to stay divisible by {}.".format(
+                    batch_size, adjusted, base
+                )
+            )
+        batch_size = adjusted
+
+    max_samples = min(
+        sorted(group_sizes[lab].values(), reverse=True)[groups_per_class - 1]
+        for lab in class_labels
+    )
+    if max_samples < 1:
+        raise ValueError("SupCon requires at least one sample per group in the train split.")
+
+    desired = batch_size // base
+    if desired > max_samples:
+        adjusted = base * max_samples
+        if log_fn is not None and adjusted != batch_size:
+            log_fn(
+                "SupCon batch_size adjusted from {} to {} to fit group sizes (max samples_per_group={}).".format(
+                    batch_size, adjusted, max_samples
+                )
+            )
+        batch_size = adjusted
+
+    samples_per_group = batch_size // base
+    return batch_size, groups_per_class, samples_per_group
+
+
+class AudioAugment:
+    def __init__(
+        self,
+        sample_rate: int,
+        p_gain: float = 0.4,
+        gain_db: Tuple[float, float] = (-6.0, 6.0),
+        p_noise: float = 0.4,
+        snr_db: Tuple[float, float] = (10.0, 30.0),
+        p_speed: float = 0.4,
+        speed_range: Tuple[float, float] = (0.9, 1.1),
+        p_shift: float = 0.4,
+        shift_max: float = 0.1,
+        p_time_mask: float = 0.3,
+        time_mask_max: float = 0.1,
+    ):
+        self.sample_rate = sample_rate
+        self.p_gain = p_gain
+        self.gain_db = gain_db
+        self.p_noise = p_noise
+        self.snr_db = snr_db
+        self.p_speed = p_speed
+        self.speed_range = speed_range
+        self.p_shift = p_shift
+        self.shift_max = shift_max
+        self.p_time_mask = p_time_mask
+        self.time_mask_max = time_mask_max
+
+    def __call__(self, audio: torch.Tensor) -> torch.Tensor:
+        if audio.numel() < 2:
+            return audio
+        x = audio.clone()
+
+        if random.random() < self.p_gain:
+            gain = 10 ** (random.uniform(*self.gain_db) / 20.0)
+            x = x * gain
+
+        if random.random() < self.p_noise:
+            x = self._add_noise(x)
+
+        if random.random() < self.p_speed:
+            x = self._speed_perturb(x)
+
+        if random.random() < self.p_shift:
+            max_shift = int(self.shift_max * x.numel())
+            if max_shift > 0:
+                shift = random.randint(-max_shift, max_shift)
+                if shift != 0:
+                    x = torch.roll(x, shifts=shift)
+
+        if random.random() < self.p_time_mask:
+            x = self._time_mask(x)
+
+        return x
+
+    def _add_noise(self, x: torch.Tensor) -> torch.Tensor:
+        snr = random.uniform(*self.snr_db)
+        signal_power = x.pow(2).mean().clamp(min=1e-12)
+        noise_power = signal_power / (10 ** (snr / 10.0))
+        noise = torch.randn_like(x) * noise_power.sqrt()
+        return x + noise
+
+    def _speed_perturb(self, x: torch.Tensor) -> torch.Tensor:
+        speed = random.uniform(*self.speed_range)
+        if speed <= 0:
+            return x
+        new_sr = max(1, int(self.sample_rate / speed))
+        if new_sr == self.sample_rate:
+            return x
+        orig_len = x.numel()
+        resampled = AF.resample(x.unsqueeze(0), self.sample_rate, new_sr).squeeze(0)
+        if resampled.numel() < orig_len:
+            return nn.functional.pad(resampled, (0, orig_len - resampled.numel()))
+        return resampled[:orig_len]
+
+    def _time_mask(self, x: torch.Tensor) -> torch.Tensor:
+        max_len = int(self.time_mask_max * x.numel())
+        if max_len < 1:
+            return x
+        mask_len = random.randint(1, max_len)
+        start = random.randint(0, max(0, x.numel() - mask_len))
+        x[start : start + mask_len] = 0.0
+        return x
+
+
+class SensorAugment:
+    def __init__(
+        self,
+        p_jitter: float = 0.4,
+        jitter_std: float = 0.02,
+        p_scale: float = 0.4,
+        scale_range: Tuple[float, float] = (0.9, 1.1),
+        p_shift: float = 0.3,
+        shift_max: float = 0.05,
+        p_time_mask: float = 0.3,
+        time_mask_max: float = 0.1,
+    ):
+        self.p_jitter = p_jitter
+        self.jitter_std = jitter_std
+        self.p_scale = p_scale
+        self.scale_range = scale_range
+        self.p_shift = p_shift
+        self.shift_max = shift_max
+        self.p_time_mask = p_time_mask
+        self.time_mask_max = time_mask_max
+
+    def __call__(self, sensor: torch.Tensor) -> torch.Tensor:
+        if sensor.numel() < 2:
+            return sensor
+        x = sensor.clone()
+
+        if random.random() < self.p_scale:
+            scale = random.uniform(*self.scale_range)
+            x = x * scale
+
+        if random.random() < self.p_jitter:
+            x = x + torch.randn_like(x) * self.jitter_std
+
+        if random.random() < self.p_shift:
+            max_shift = int(self.shift_max * x.size(0))
+            if max_shift > 0:
+                shift = random.randint(-max_shift, max_shift)
+                if shift != 0:
+                    x = torch.roll(x, shifts=shift, dims=0)
+
+        if random.random() < self.p_time_mask:
+            x = self._time_mask(x)
+
+        return x
+
+    def _time_mask(self, x: torch.Tensor) -> torch.Tensor:
+        max_len = int(self.time_mask_max * x.size(0))
+        if max_len < 1:
+            return x
+        mask_len = random.randint(1, max_len)
+        start = random.randint(0, max(0, x.size(0) - mask_len))
+        x[start : start + mask_len, :] = 0.0
+        return x
+
+
 def collate_fn(
     batch: List[Dict[str, Any]],
     max_length: Optional[int] = None,
     random_crop: bool = False,
+    audio_augment: Optional[AudioAugment] = None,
 ) -> Dict[str, torch.Tensor]:
-    audio_list = [b["audio"] for b in batch]
+    audio_list = []
+    for b in batch:
+        audio = b["audio"]
+        if audio_augment is not None:
+            audio = audio_augment(audio)
+        audio_list.append(audio)
     audio_lengths = [a.shape[0] for a in audio_list]
     max_T_audio = max(audio_lengths)
     B = len(batch)
@@ -274,6 +495,7 @@ def collate_sensor(
     batch: List[Dict[str, Any]],
     max_length: Optional[int] = None,
     random_crop: bool = False,
+    sensor_augment: Optional[SensorAugment] = None,
 ) -> Dict[str, torch.Tensor]:
     sensors = []
     lengths = []
@@ -321,6 +543,8 @@ def collate_sensor(
             Q = nn.functional.pad(Q, (0, T - Q.shape[0]))
 
         sensor = torch.stack([P, Q], dim=-1)
+        if sensor_augment is not None:
+            sensor = sensor_augment(sensor)
         sensors.append(sensor)
         lengths.append(T)
         labels.append(b["label_id"])
@@ -533,6 +757,8 @@ def supervised_contrastive_loss(
     labels: torch.Tensor,
     groups: List[str],
     temperature: float = 0.07,
+    allow_same_group: bool = False,
+    return_stats: bool = False,
 ) -> torch.Tensor:
     z = nn.functional.normalize(z, dim=1)
     labels = labels.view(-1, 1)
@@ -544,19 +770,27 @@ def supervised_contrastive_loss(
     uniq = {g: i for i, g in enumerate(sorted(set(groups)))}
     group_ids = torch.tensor([uniq[g] for g in groups], device=labels.device).view(-1, 1)
     diff_group = ~group_ids.eq(group_ids.t())
-    pos_mask = same_label & diff_group
+    if allow_same_group:
+        pos_mask = same_label
+    else:
+        pos_mask = same_label & diff_group
+    pos_mask = pos_mask & ~torch.eye(B, dtype=torch.bool, device=pos_mask.device)
 
     log_prob = sim - torch.logsumexp(sim, dim=1, keepdim=True)
     pos_per_anchor = pos_mask.sum(dim=1)
     valid = pos_per_anchor > 0
     valid_ratio = valid.float().mean().item()
     avg_pos = pos_per_anchor.float().mean().item()
-    print(f"[SupCon stats] valid_ratio={valid_ratio:.3f} avg_pos={avg_pos:.2f}")
+    # print(f"[SupCon stats] valid_ratio={valid_ratio:.3f} avg_pos={avg_pos:.2f}")
     pos_counts = pos_per_anchor.clamp(min=1)
     loss = -(pos_mask.float() * log_prob).sum(dim=1) / pos_counts
     if valid.any():
-        return loss[valid].mean()
-    return loss.mean()
+        loss_value = loss[valid].mean()
+    else:
+        loss_value = loss.mean()
+    if return_stats:
+        return loss_value, {"valid_ratio": valid_ratio, "avg_pos": avg_pos}
+    return loss_value
 
 
 @torch.no_grad()
@@ -580,6 +814,9 @@ def pretrain_supcon(
     modality: str,
     epochs: int = 20,
     lr: float = 3e-4,
+    temperature: float = 0.07,
+    allow_same_group: bool = False,
+    log_stats: bool = False,
     log_fn=None,
 ) -> None:
     encoder.train()
@@ -592,6 +829,8 @@ def pretrain_supcon(
     )
     for epoch in range(1, epochs + 1):
         total_loss = 0.0
+        total_valid = 0.0
+        total_pos = 0.0
         total = 0
         for batch in loader:
             labels = batch["label"].to(device)
@@ -602,14 +841,36 @@ def pretrain_supcon(
                 x = batch["sensor"].to(device, non_blocking=True)
             feats = encoder(x)
             proj = projector(feats)
-            loss = supervised_contrastive_loss(proj, labels, groups)
+            if log_stats:
+                loss, stats = supervised_contrastive_loss(
+                    proj,
+                    labels,
+                    groups,
+                    temperature=temperature,
+                    allow_same_group=allow_same_group,
+                    return_stats=True,
+                )
+            else:
+                loss = supervised_contrastive_loss(
+                    proj,
+                    labels,
+                    groups,
+                    temperature=temperature,
+                    allow_same_group=allow_same_group,
+                )
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             bs = labels.size(0)
             total_loss += loss.item() * bs
+            if log_stats:
+                total_valid += stats["valid_ratio"] * bs
+                total_pos += stats["avg_pos"] * bs
             total += bs
         msg = f"[SupCon:{modality}] epoch={epoch:02d} loss={total_loss / max(1, total):.4f}"
+        if log_stats:
+            denom = max(1, total)
+            msg += f" valid_ratio={total_valid / denom:.3f} avg_pos={total_pos / denom:.1f}"
         if log_fn is None:
             print(msg)
         else:
@@ -852,6 +1113,34 @@ def eval_stacking(
     return acc
 
 
+def save_supcon_checkpoint(
+    path: Path,
+    audio_encoder: nn.Module,
+    sensor_encoder: nn.Module,
+    audio_head: nn.Module,
+    sensor_head: nn.Module,
+    label2id: Dict[str, int],
+    audio_cfg: Dict[str, Any],
+    sensor_cfg: Dict[str, Any],
+    stacking_weights: torch.Tensor,
+    group_normalize: bool = True,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ckpt = {
+        "ckpt_type": "supcon_stack",
+        "audio_encoder_state": audio_encoder.state_dict(),
+        "sensor_encoder_state": sensor_encoder.state_dict(),
+        "audio_head_state": audio_head.state_dict(),
+        "sensor_head_state": sensor_head.state_dict(),
+        "stacking_weights": stacking_weights,
+        "label2id": label2id,
+        "audio_encoder_cfg": audio_cfg,
+        "sensor_encoder_cfg": sensor_cfg,
+        "group_normalize": group_normalize,
+    }
+    torch.save(ckpt, path)
+
+
 def main():
     log_dir = Path("log")
     log_dir.mkdir(exist_ok=True)
@@ -867,7 +1156,7 @@ def main():
     log("=" * 80)
     log(f"Run started at {datetime.now().isoformat(timespec='seconds')}")
 
-    all_paths = sorted(find_segment_paths("./data"))
+    all_paths = sorted(find_segment_paths("./data/MMDataset_segments_first5/"))
     if not all_paths:
         raise RuntimeError("No .npz found! Please run preprocess_segments.py first.")
 
@@ -891,6 +1180,33 @@ def main():
         fail_on_unknown=True,
     )
     log(label_processor.describe())
+
+    force_cpu = os.environ.get("FORCE_CPU", "0") == "1"
+    device = torch.device("cpu" if force_cpu or not torch.cuda.is_available() else "cuda")
+    if force_cpu:
+        torch.backends.cudnn.enabled = False
+    if device.type == "cuda":
+        torch.backends.cudnn.benchmark = True
+
+    default_workers = max(1, min(4, os.cpu_count() or 1))
+    num_workers = int(os.environ.get("NUM_WORKERS", str(default_workers)))
+    prefetch_factor = int(os.environ.get("PREFETCH_FACTOR", "2"))
+
+    batch_size = int(os.environ.get("BATCH_SIZE", "64"))
+    max_seconds = float(os.environ.get("MAX_SECONDS", "0"))
+    max_length = int(max_seconds * target_sr) if max_seconds > 0 else None
+
+    def _move_to_cpu(*modules: nn.Module) -> None:
+        for module in modules:
+            module.to("cpu")
+
+    def _move_to_device(*modules: nn.Module) -> None:
+        for module in modules:
+            module.to(device)
+
+    def _maybe_empty_cache() -> None:
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
 
     train_paths, val_paths = split_paths_by_group(
         all_paths, train_ratio=0.6, seed=seed, label_normalizer=label_processor
@@ -934,98 +1250,135 @@ def main():
         )
     )
 
-    batch_size = int(os.environ.get("BATCH_SIZE", "64"))
-    max_seconds = float(os.environ.get("MAX_SECONDS", "0"))
-    max_length = int(max_seconds * target_sr) if max_seconds > 0 else None
-    collate_train = partial(collate_fn, max_length=max_length, random_crop=True)
+    aug_p_speed = float(os.environ.get("AUG_P_SPEED", "0"))
+    audio_augment = AudioAugment(sample_rate=target_sr, p_speed=aug_p_speed)
+    sensor_aug_on = os.environ.get("SENSOR_AUG", "0").strip().lower() in {"1", "true", "yes"}
+    sensor_augment = SensorAugment() if sensor_aug_on else None
+    collate_train = partial(
+        collate_fn,
+        max_length=max_length,
+        random_crop=True,
+        audio_augment=audio_augment,
+    )
     collate_eval = partial(collate_fn, max_length=max_length, random_crop=False)
     collate_sensor_train = partial(
-        collate_sensor, max_length=max_length, random_crop=True
+        collate_sensor,
+        max_length=max_length,
+        random_crop=True,
+        sensor_augment=sensor_augment,
     )
     if max_length is not None:
         log(f"Max crop length: {max_length} samples ({max_seconds:.2f}s)")
 
     train_groups = [_group_key_from_path(p) for p in train_ds.paths]
-    supcon_sampler = GroupBalancedBatchSampler(
+    requested_groups_per_class = int(os.environ.get("SUPCON_GROUPS_PER_CLASS", "2"))
+    supcon_batch_size, supcon_groups_per_class, supcon_samples_per_group = resolve_supcon_batch_config(
         train_label_ids.tolist(),
         train_groups,
         batch_size=batch_size,
-        groups_per_class=2,
+        groups_per_class=requested_groups_per_class,
+        log_fn=log,
+    )
+    supcon_sampler = GroupBalancedBatchSampler(
+        train_label_ids.tolist(),
+        train_groups,
+        batch_size=supcon_batch_size,
+        groups_per_class=supcon_groups_per_class,
         seed=seed,
     )
+    loader_kwargs = {
+        "num_workers": num_workers,
+        "pin_memory": device.type == "cuda",
+        "worker_init_fn": seed_worker,
+        "generator": dl_generator,
+    }
+    if num_workers > 0:
+        loader_kwargs["persistent_workers"] = True
+        loader_kwargs["prefetch_factor"] = prefetch_factor
+
     train_loader_supcon = DataLoader(
         train_ds,
         batch_sampler=supcon_sampler,
-        num_workers=0,
         collate_fn=collate_train,
-        worker_init_fn=seed_worker,
-        generator=dl_generator,
+        **loader_kwargs,
     )
     train_loader_supcon_sensor = DataLoader(
         train_ds,
         batch_sampler=supcon_sampler,
-        num_workers=0,
         collate_fn=collate_sensor_train,
-        worker_init_fn=seed_worker,
-        generator=dl_generator,
+        **loader_kwargs,
     )
     train_loader_cls = DataLoader(
         train_ds,
         batch_size=batch_size,
         sampler=train_sampler,
-        num_workers=0,
         collate_fn=collate_train,
-        worker_init_fn=seed_worker,
-        generator=dl_generator,
+        **loader_kwargs,
     )
     train_loader_plain = DataLoader(
         train_ds,
         batch_size=batch_size,
         shuffle=False,
-        num_workers=0,
         collate_fn=collate_fn,
-        worker_init_fn=seed_worker,
-        generator=dl_generator,
+        **loader_kwargs,
     )
     val_loader = DataLoader(
         val_ds,
         batch_size=batch_size,
         shuffle=False,
-        num_workers=0,
         collate_fn=collate_eval,
-        worker_init_fn=seed_worker,
-        generator=dl_generator,
+        **loader_kwargs,
     )
 
-    force_cpu = os.environ.get("FORCE_CPU", "0") == "1"
-    device = torch.device("cpu" if force_cpu or not torch.cuda.is_available() else "cuda")
-    if force_cpu:
-        torch.backends.cudnn.enabled = False
+    audio_out_dim = 128
+    sensor_out_dim = 128
+    audio_f_max = float(os.environ.get("AUDIO_FMAX", "4000"))
+    audio_cfg = {
+        "sample_rate": target_sr,
+        "n_mels": 64,
+        "n_fft": 1024,
+        "hop_length": 512,
+        "out_dim": audio_out_dim,
+        "f_min": 0.0,
+        "f_max": audio_f_max,
+    }
+    sensor_cfg = {
+        "input_dim": 2,
+        "out_dim": sensor_out_dim,
+        "n_filters": 32,
+        "kernel_sizes": (9, 19, 39),
+        "bottleneck_channels": 32,
+        "n_blocks": 6,
+        "use_residual": True,
+    }
 
-    def _move_to_cpu(*modules: nn.Module) -> None:
-        for module in modules:
-            module.to("cpu")
+    audio_encoder = AudioResNetEncoder(**audio_cfg)
+    sensor_encoder = InceptionTimeEncoder(**sensor_cfg)
 
-    def _move_to_device(*modules: nn.Module) -> None:
-        for module in modules:
-            module.to(device)
+    audio_projector = ProjectionHead(audio_out_dim, proj_dim=128)
+    sensor_projector = ProjectionHead(sensor_out_dim, proj_dim=128)
 
-    def _maybe_empty_cache() -> None:
-        if device.type == "cuda":
-            torch.cuda.empty_cache()
-
-    audio_encoder = AudioResNetEncoder(
-        sample_rate=target_sr,
-        out_dim=128,
-        f_max=4000,
+    supcon_temperature = float(os.environ.get("SUPCON_TEMP", "0.07"))
+    supcon_allow_same_group = os.environ.get("SUPCON_ALLOW_SAME_GROUP", "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    supcon_log_stats = os.environ.get("SUPCON_LOG_STATS", "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    log(
+        "SupCon cfg: temp={} allow_same_group={} groups_per_class={} samples_per_group={} batch_size={} sensor_aug={}".format(
+            supcon_temperature,
+            supcon_allow_same_group,
+            supcon_groups_per_class,
+            supcon_samples_per_group,
+            supcon_batch_size,
+            "on" if sensor_augment is not None else "off",
+        )
     )
-    sensor_encoder = InceptionTimeEncoder(
-        input_dim=2,
-        out_dim=128,
-    )
-
-    audio_projector = ProjectionHead(128, proj_dim=128)
-    sensor_projector = ProjectionHead(128, proj_dim=128)
 
     log("Stage 1: supervised contrastive pretrain (audio)")
     _move_to_cpu(sensor_encoder, sensor_projector)
@@ -1038,6 +1391,9 @@ def main():
         device,
         modality="audio",
         epochs=20,
+        temperature=supcon_temperature,
+        allow_same_group=supcon_allow_same_group,
+        log_stats=supcon_log_stats,
         log_fn=log,
     )
     log("Stage 2: supervised contrastive pretrain (sensor)")
@@ -1051,6 +1407,9 @@ def main():
         device,
         modality="sensor",
         epochs=20,
+        temperature=supcon_temperature,
+        allow_same_group=supcon_allow_same_group,
+        log_stats=supcon_log_stats,
         log_fn=log,
     )
 
@@ -1139,6 +1498,25 @@ def main():
     log(f"Sensor val acc: {eval_accuracy(val_sensor_logits, val_labels):.4f}")
     val_acc = eval_stacking(weights, val_audio_logits, val_sensor_logits, val_labels)
     log(f"Stacked val acc: {val_acc:.4f}")
+
+    save_ckpt = os.environ.get("SAVE_SUPCON_CKPT", "1").strip().lower() not in {"0", "false", "no"}
+    if save_ckpt:
+        _move_to_cpu(audio_encoder, sensor_encoder, audio_head, sensor_head)
+        _maybe_empty_cache()
+        ckpt_path = Path(os.environ.get("SUPCON_CKPT_PATH", "checkpoints/supcon_stack.pt"))
+        save_supcon_checkpoint(
+            ckpt_path,
+            audio_encoder,
+            sensor_encoder,
+            audio_head,
+            sensor_head,
+            train_ds.label2id,
+            audio_cfg,
+            sensor_cfg,
+            weights,
+            group_normalize=True,
+        )
+        log(f"Saved SupCon stack checkpoint to {ckpt_path}")
 
     log_file.close()
 
